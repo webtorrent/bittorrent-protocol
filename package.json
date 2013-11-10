@@ -1,7 +1,7 @@
 {
   "name": "bittorrent-protocol",
   "version": "0.1.0",
-  "description": "BitTorrent peer wire protocol implemented as a stream",
+  "description": "Simple, robust, BitTorrent peer wire protocol implementation",
   "main": "index.js",
   "dependencies": {
     "bitfield": "0.x",
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/feross/webtorrent.git"
+    "url": "git://github.com/feross/bittorrent-protocol.git"
   },
   "keywords": [
     "torrent",
@@ -30,6 +30,6 @@
   "author": "Feross Aboukhadijeh <feross@feross.org> (http://feross.org/)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/feross/webtorrent/issues"
+    "url": "https://github.com/feross/bittorrent-protocol/issues"
   }
 }
