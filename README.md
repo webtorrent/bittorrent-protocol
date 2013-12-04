@@ -6,11 +6,9 @@
 
 Node.js implementation of the [BitTorrent peer wire protocol specification](https://wiki.theory.org/BitTorrentSpecification#Peer_wire_protocol_.28TCP.29). This is a fork of [peer-wire-protocol](https://github.com/mafintosh/peer-wire-protocol).
 
-The protocol is the main communication layer when transferring files using BitTorrent and is used by [WebTorrent](https://github.com/feross/WebTorrent). This
+The protocol is the main communication layer for BitTorrent file transfer and is used by [WebTorrent](https://github.com/feross/WebTorrent).
 
-Installation
-
-It is available on npm as `bittorrent-protocol`.
+## Installation
 
 `npm install bittorrent-protocol`
 
