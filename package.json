@@ -8,7 +8,9 @@
     "bncode": "0.x",
     "core-util-is": "1.x"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "tape": "*"
+  },
   "scripts": {
     "test": "tape test/*.js"
   },
