@@ -6,7 +6,6 @@
   "dependencies": {
     "bitfield": "0.x",
     "bncode": "0.x",
-    "bops": "0.x",
     "core-util-is": "1.x"
   },
   "devDependencies": {},
