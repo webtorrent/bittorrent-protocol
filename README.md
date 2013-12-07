@@ -4,6 +4,8 @@
 [![Build Status](https://travis-ci.org/feross/bittorrent-protocol.png?branch=master)](https://travis-ci.org/feross/bittorrent-protocol)
 [![Dependency Status](https://david-dm.org/feross/bittorrent-protocol.png)](https://david-dm.org/feross/bittorrent-protocol)
 
+[![browser support](https://ci.testling.com/feross/bittorrent-protocol.png)](https://ci.testling.com/feross/bittorrent-protocol)
+
 Node.js implementation of the [BitTorrent peer wire protocol specification](https://wiki.theory.org/BitTorrentSpecification#Peer_wire_protocol_.28TCP.29). This is a fork of [peer-wire-protocol](https://github.com/mafintosh/peer-wire-protocol).
 
 The protocol is the main communication layer for BitTorrent file transfer and is used by [WebTorrent](https://github.com/feross/WebTorrent).

@@ -14,6 +14,16 @@
   "scripts": {
     "test": "tape test/*.js"
   },
+  "testling": {
+    "files": "test/*.js",
+    "browsers": {
+      "ie": [ 10 ],
+      "firefox": [ 5, 10, 15, 20, 25 ],
+      "chrome": [ 5, 10, 15, 20, 25, 30, 31, "canary" ],
+      "safari": [ 5.1, 6 ],
+      "opera": [ 12, 17, "next" ]
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/feross/bittorrent-protocol.git"
