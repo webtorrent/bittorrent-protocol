@@ -1,6 +1,6 @@
 {
   "name": "bittorrent-protocol",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Simple, robust, BitTorrent peer wire protocol implementation",
   "main": "index.js",
   "dependencies": {
@@ -17,11 +17,35 @@
   "testling": {
     "files": "test/*.js",
     "browsers": {
-      "ie": [ 10 ],
-      "firefox": [ 5, 10, 15, 20, 25 ],
-      "chrome": [ 5, 10, 15, 20, 25, 30, 31, "canary" ],
-      "safari": [ 5.1, 6 ],
-      "opera": [ 12, 17, "next" ]
+      "ie": [
+        10
+      ],
+      "firefox": [
+        5,
+        10,
+        15,
+        20,
+        25
+      ],
+      "chrome": [
+        5,
+        10,
+        15,
+        20,
+        25,
+        30,
+        31,
+        "canary"
+      ],
+      "safari": [
+        5.1,
+        6
+      ],
+      "opera": [
+        12,
+        17,
+        "next"
+      ]
     }
   },
   "repository": {
