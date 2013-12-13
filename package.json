@@ -21,9 +21,7 @@
       "chrome/25..latest",
       "firefox/20..latest",
       "safari/6..latest",
-      "opera/15.0..latest",
-      "iphone/6",
-      "ipad/6"
+      "opera/15.0..latest"
     ]
   },
   "repository": {
