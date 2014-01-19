@@ -38,7 +38,8 @@ util.inherits(Wire, stream.Duplex)
 function Wire () {
   var self = this
   if (!(this instanceof Wire)) return new Wire()
-  stream.Duplex.call(this, { objectMode: true })
+
+  stream.Duplex.call(this)
 
   self.amChoking = true
   self.amInterested = false
