@@ -4,11 +4,11 @@
   "description": "Simple, robust, BitTorrent peer wire protocol implementation",
   "main": "index.js",
   "dependencies": {
-    "bitfield": "0.x",
-    "bncode": "0.x"
+    "bitfield": "~0.1.0",
+    "bncode": "~0.3.0"
   },
   "devDependencies": {
-    "tape": "*"
+    "tape": "2.x"
   },
   "scripts": {
     "test": "tape test/*.js"
