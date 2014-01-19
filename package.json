@@ -5,8 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "bitfield": "0.x",
-    "bncode": "0.x",
-    "core-util-is": "1.x"
+    "bncode": "0.x"
   },
   "devDependencies": {
     "tape": "*"
