@@ -11,6 +11,7 @@ var MESSAGE_CHOKE        = new Buffer([0x00,0x00,0x00,0x01,0x00])
 var MESSAGE_UNCHOKE      = new Buffer([0x00,0x00,0x00,0x01,0x01])
 var MESSAGE_INTERESTED   = new Buffer([0x00,0x00,0x00,0x01,0x02])
 var MESSAGE_UNINTERESTED = new Buffer([0x00,0x00,0x00,0x01,0x03])
+
 var MESSAGE_RESERVED     = [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00]
 var MESSAGE_PORT         = [0x00,0x00,0x00,0x03,0x09,0x00,0x00]
 
@@ -41,14 +42,12 @@ function Wire () {
 
   stream.Duplex.call(this)
 
-  self.amChoking = true
-  self.amInterested = false
+  self.choking = true
+  self.interested = false
   self.peerChoking = true
   self.peerInterested = false
   self.peerPieces = []
   self.peerExtensions = {}
-  self.peerAddress = null // external
-  self.peerSpeed = null   // external
 
   self.uploaded = 0
   self.downloaded = 0
@@ -64,8 +63,10 @@ function Wire () {
     self.push(null) // cannot be half open
     clearInterval(self._keepAlive)
     self._parse(Number.MAX_VALUE, function () {})
-    while (self.peerRequests.length) self.peerRequests.pop()
-    while (self.requests.length) self._callback(self.requests.shift(), new Error('wire is closed'), null)
+    while (self.peerRequests.length)
+      self.peerRequests.pop()
+    while (self.requests.length)
+      self._callback(self.requests.shift(), new Error('wire is closed'), null)
   })
 
   var ontimeout = function () {
@@ -140,9 +141,12 @@ function Wire () {
 }
 
 Wire.prototype.handshake = function (infoHash, peerId, extensions) {
-  if (typeof infoHash === 'string') infoHash = new Buffer(infoHash, 'hex')
-  if (typeof peerId === 'string') peerId = new Buffer(peerId)
-  if (infoHash.length !== 20 || peerId.length !== 20) throw new Error('infoHash and peerId MUST have length 20')
+  if (typeof infoHash === 'string')
+    infoHash = new Buffer(infoHash, 'hex')
+  if (typeof peerId === 'string')
+    peerId = new Buffer(peerId)
+  if (infoHash.length !== 20 || peerId.length !== 20)
+    throw new Error('infoHash and peerId MUST have length 20')
 
   var reserved = new Buffer(MESSAGE_RESERVED)
   if (extensions && extensions.dht) reserved[7] |= 1
@@ -152,208 +156,183 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
 }
 
 Wire.prototype.choke = function () {
-  var self = this
 
-  if (self.amChoking) return
-  self.amChoking = true
-  while (self.peerRequests.length) self.peerRequests.pop()
-  self._push(MESSAGE_CHOKE)
+  if (this.choking) return
+  this.choking = true
+  while (this.peerRequests.length) this.peerRequests.pop()
+  this._push(MESSAGE_CHOKE)
 }
 
 Wire.prototype.unchoke = function () {
-  var self = this
-  if (!self.amChoking) return
-  self.amChoking = false
-  self._push(MESSAGE_UNCHOKE)
+  if (!this.choking) return
+  this.choking = false
+  this._push(MESSAGE_UNCHOKE)
 }
 
 Wire.prototype.interested = function () {
-  var self = this
-  if (self.amInterested) return
-  self.amInterested = true
-  self._push(MESSAGE_INTERESTED)
+  if (this.interested) return
+  this.interested = true
+  this._push(MESSAGE_INTERESTED)
 }
 
 Wire.prototype.uninterested = function () {
-  var self = this
-  if (!self.amInterested) return
-  self.amInterested = false
-  self._push(MESSAGE_UNINTERESTED)
+  if (!this.interested) return
+  this.interested = false
+  this._push(MESSAGE_UNINTERESTED)
 }
 
 Wire.prototype.have = function (i) {
-  var self = this
-  self._message(4, [i], null)
+  this._message(4, [i], null)
 }
 
 Wire.prototype.bitfield = function (bitfield) {
-  var self = this
   if (bitfield.buffer) bitfield = bitfield.buffer // support bitfield objects
-  self._message(5, [], bitfield)
+  this._message(5, [], bitfield)
 }
 
 Wire.prototype.request = function (i, offset, length, callback) {
-  var self = this
   if (!callback) callback = function () {}
-  if (self._finished)   return callback(new Error('wire is closed'))
-  if (self.peerChoking) return callback(new Error('peer is choking'))
-  self.requests.push(new Request(i, offset, length, callback))
-  self._updateTimeout()
-  self._message(6, [i, offset, length], null)
+  if (this._finished)   return callback(new Error('wire is closed'))
+  if (this.peerChoking) return callback(new Error('peer is choking'))
+  this.requests.push(new Request(i, offset, length, callback))
+  this._updateTimeout()
+  this._message(6, [i, offset, length], null)
 }
 
 Wire.prototype.piece = function (i, offset, buffer) {
-  var self = this
-  self.uploaded += buffer.length
-  self.emit('upload', buffer.length)
-  self._message(7, [i, offset], buffer)
+  this.uploaded += buffer.length
+  this.emit('upload', buffer.length)
+  this._message(7, [i, offset], buffer)
 }
 
 Wire.prototype.cancel = function (i, offset, length) {
-  var self = this
-  self._callback(pull(self.requests, i, offset, length), new Error('request was cancelled'), null)
-  self._message(8, [i, offset, length], null)
+  this._callback(pull(this.requests, i, offset, length), new Error('request was cancelled'), null)
+  this._message(8, [i, offset, length], null)
 }
 
 Wire.prototype.extended = function (ext_number, msg) {
-  var self = this
   var ext_id = new Buffer(1)
   ext_id.writeUInt8(ext_number, 0)
-  self._message(20, [], Buffer.concat([ext_id, bncode.encode(msg)]))
+  this._message(20, [], Buffer.concat([ext_id, bncode.encode(msg)]))
 }
 
 Wire.prototype.port = function (port) {
-  var self = this
   var message = new Buffer(MESSAGE_PORT)
   message.writeUInt16BE(port, 5)
-  self._push(message)
+  this._push(message)
 }
 
 Wire.prototype.setKeepAlive = function (bool) {
-  var self = this
-  clearInterval(self._keepAlive)
+  clearInterval(this._keepAlive)
   if (bool === false) return
-  self._keepAlive = setInterval(self._push.bind(self, MESSAGE_KEEP_ALIVE), 60000)
+  this._keepAlive = setInterval(this._push.bind(this, MESSAGE_KEEP_ALIVE), 60000)
 }
 
 Wire.prototype.setTimeout = function (ms, fn) {
-  var self = this
-  if (self.requests.length) clearTimeout(self.requests[0].timeout)
-  self._timeout = ms
-  self._updateTimeout()
-  if (fn) self.on('timeout', fn)
+  if (this.requests.length) clearTimeout(this.requests[0].timeout)
+  this._timeout = ms
+  this._updateTimeout()
+  if (fn) this.on('timeout', fn)
 }
 
 Wire.prototype.destroy = function () {
-  var self = this
-  self.emit('close')
-  self.end()
+  this.emit('close')
+  this.end()
 }
 
 // inbound
 
 Wire.prototype._onhandshake = function (infoHash, peerId, extensions) {
-  var self = this
-  self.peerExtensions = extensions
-  self.emit('handshake', infoHash, peerId, extensions)
+  this.peerExtensions = extensions
+  this.emit('handshake', infoHash, peerId, extensions)
 }
 
 Wire.prototype._oninterested = function () {
-  var self = this
-  self.peerInterested = true
-  self.emit('interested')
+  this.peerInterested = true
+  this.emit('interested')
 }
 
 Wire.prototype._onuninterested = function () {
-  var self = this
-  self.peerInterested = false
-  self.emit('uninterested')
+  this.peerInterested = false
+  this.emit('uninterested')
 }
 
 Wire.prototype._onchoke = function () {
-  var self = this
-  self.peerChoking = true
-  self.emit('choke')
-  while (self.requests.length) self._callback(self.requests.shift(), new Error('peer is choking'), null)
+  this.peerChoking = true
+  this.emit('choke')
+  while (this.requests.length)
+    this._callback(this.requests.shift(), new Error('peer is choking'), null)
 }
 
 Wire.prototype._onunchoke = function () {
-  var self = this
-  self.peerChoking = false
-  self.emit('unchoke')
+  this.peerChoking = false
+  this.emit('unchoke')
 }
 
 Wire.prototype._onbitfield = function (buffer) {
-  var self = this
   var pieces = bitfield(buffer)
   for (var i = 0; i < 8 * buffer.length; i++) {
-    self.peerPieces[i] = pieces.get(i)
+    this.peerPieces[i] = pieces.get(i)
   }
-  self.emit('bitfield', buffer)
+  this.emit('bitfield', buffer)
 }
 
 Wire.prototype._onhave = function (i) {
-  var self = this
-  self.peerPieces[i] = true
-  self.emit('have', i)
+  this.peerPieces[i] = true
+  this.emit('have', i)
 }
 
 Wire.prototype._onrequest = function (i, offset, length) {
-  var self = this
-  if (self.amChoking) return
+  if (this.choking) return
 
   var respond = function (err, buffer) {
-    if (err || request !== pull(self.peerRequests, i, offset, length)) return
-    self.piece(i, offset, buffer)
+    if (err || request !== pull(this.peerRequests, i, offset, length)) return
+    this.piece(i, offset, buffer)
   }
 
   var request = new Request(i, offset, length, respond)
-  self.peerRequests.push(request)
-  self.emit('request', i, offset, length, respond)
+  this.peerRequests.push(request)
+  this.emit('request', i, offset, length, respond)
 }
 
 Wire.prototype._oncancel = function (i, offset, length) {
-  var self = this
-  pull(self.peerRequests, i, offset, length)
-  self.emit('cancel', i, offset, length)
+  pull(this.peerRequests, i, offset, length)
+  this.emit('cancel', i, offset, length)
 }
 
 Wire.prototype._onpiece = function (i, offset, buffer) {
-  var self = this
-  self._callback(pull(self.requests, i, offset, buffer.length), null, buffer)
-  self.downloaded += buffer.length
-  self.emit('download', buffer.length)
-  self.emit('piece', i, offset, buffer)
+  this._callback(pull(this.requests, i, offset, buffer.length), null, buffer)
+  this.downloaded += buffer.length
+  this.emit('download', buffer.length)
+  this.emit('piece', i, offset, buffer)
 }
 
 Wire.prototype._onport = function (port) {
-  var self = this
-  self.emit('port', port)
+  this.emit('port', port)
 }
 
 Wire.prototype._onextended = function (ext) {
-  var self = this
-  self.emit('extended', ext)
+  this.emit('extended', ext)
 }
 
 // helpers and streams
 
 Wire.prototype._callback = function (request, err, buffer) {
-  var self = this
   if (!request) return
-  if (request.timeout) clearTimeout(request.timeout)
-  if (!self.peerChoking && !self._finished) self._updateTimeout()
+  if (request.timeout)
+    clearTimeout(request.timeout)
+  if (!this.peerChoking && !this._finished)
+    this._updateTimeout()
   request.callback(err, buffer)
 }
 
 Wire.prototype._updateTimeout = function () {
-  var self = this
-  if (!self._timeout || !self.requests.length || self.requests[0].timeout) return
-  self.requests[0].timeout = setTimeout(self._ontimeout, self._timeout)
+  if (!this._timeout || !this.requests.length || this.requests[0].timeout)
+    return
+  this.requests[0].timeout = setTimeout(this._ontimeout, this._timeout)
 }
 
 Wire.prototype._message = function (id, numbers, data) {
-  var self = this
   var dataLength = data ? data.length : 0
   var buffer = new Buffer(5 + 4 * numbers.length)
 
@@ -363,45 +342,42 @@ Wire.prototype._message = function (id, numbers, data) {
     buffer.writeUInt32BE(numbers[i], 5 + 4 * i)
   }
 
-  self._push(buffer)
-  if (data) self._push(data)
+  this._push(buffer)
+  if (data) this._push(data)
 }
 
 Wire.prototype._push = function (data) {
-  var self = this
-  if (self._finished) return
-  self.push(data)
+  if (this._finished) return
+  this.push(data)
 }
 
 Wire.prototype._parse = function (size, parser) {
-  var self = this
-  self._parserSize = size
-  self._parser = parser
+  this._parserSize = size
+  this._parser = parser
 }
 
 /**
  * Duplex stream method. Called whenever the upstream has data for us.
  * @param  {Buffer|string} data
  * @param  {string}   encoding
- * @param  {function} callback
+ * @param  {function} cb
  */
-Wire.prototype._write = function (data, encoding, callback) {
-  var self = this
-  self._bufferSize += data.length
-  self._buffer.push(data)
+Wire.prototype._write = function (data, encoding, cb) {
+  this._bufferSize += data.length
+  this._buffer.push(data)
 
-  while (self._bufferSize >= self._parserSize) {
-    var buffer = (self._buffer.length === 1)
-      ? self._buffer[0]
-      : Buffer.concat(self._buffer)
-    self._bufferSize -= self._parserSize
-    self._buffer = self._bufferSize
-      ? [buffer.slice(self._parserSize)]
+  while (this._bufferSize >= this._parserSize) {
+    var buffer = (this._buffer.length === 1)
+      ? this._buffer[0]
+      : Buffer.concat(this._buffer)
+    this._bufferSize -= this._parserSize
+    this._buffer = this._bufferSize
+      ? [buffer.slice(this._parserSize)]
       : []
-    self._parser(buffer.slice(0, self._parserSize))
+    this._parser(buffer.slice(0, this._parserSize))
   }
 
-  callback(null) // Signal that we're ready for more data
+  cb(null) // Signal that we're ready for more data
 }
 
 /**
