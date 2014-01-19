@@ -10,7 +10,7 @@ Node.js implementation of the [BitTorrent peer wire protocol specification](http
 
 The protocol is the main communication layer for BitTorrent file transfer and is used by [WebTorrent](https://github.com/feross/WebTorrent).
 
-## Installation
+## install
 
 `npm install bittorrent-protocol`
 
@@ -39,7 +39,7 @@ net.createServer(function (socket) {
 }).listen(6881)
 ```
 
-## Full API
+## methods
 
 ### Handshaking
 
@@ -187,6 +187,6 @@ wire.on('upload', function(numberOfBytes) {
 });
 ```
 
-## License
+## license
 
 MIT
