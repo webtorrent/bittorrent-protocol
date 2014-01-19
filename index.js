@@ -125,7 +125,8 @@ function Wire () {
     self._parse(pstrlen + 48, function (handshake) {
       handshake = handshake.slice(pstrlen)
       self._onhandshake(handshake.slice(8, 28), handshake.slice(28, 48), {
-        dht: !!(handshake[7] & 1)
+        dht: !!(handshake[7] & 0x01), // see bep_0005
+        extended: !!(handshake[5] & 0x10) // see bep_0010
       })
       self._parse(4, onmessagelength)
     })
