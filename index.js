@@ -123,6 +123,12 @@ function Wire () {
   self._parse(1, function (buffer) {
     var pstrlen = buffer.readUInt8(0)
     self._parse(pstrlen + 48, function (handshake) {
+      var protocol = handshake.slice(0, pstrlen)
+      if (protocol.toString() !== 'BitTorrent protocol') {
+        self.emit('error', 'Wire not speaking BitTorrent protocol: ', protocol)
+        self.destroy()
+        return
+      }
       handshake = handshake.slice(pstrlen)
       self._onhandshake(handshake.slice(8, 28), handshake.slice(28, 48), {
         dht: !!(handshake[7] & 0x01), // see bep_0005
