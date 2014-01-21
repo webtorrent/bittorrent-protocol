@@ -107,7 +107,7 @@ function Wire () {
             buffer.readUInt32BE(5), buffer.slice(9))
       case 8:
         return self._oncancel(buffer.readUInt32BE(1),
-            buffer.readUInt32BE(5), buffer.readUInt32BE(9))
+            buffer.readUInt32BE(5), buffer.readUInt32BE(9))
       case 9:
         return self._onport(buffer.readUInt16BE(1))
       case 20:
