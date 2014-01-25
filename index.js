@@ -42,10 +42,12 @@ function Wire () {
 
   stream.Duplex.call(this)
 
-  self.choking = true
-  self.interested = false
-  self.peerChoking = true
-  self.peerInterested = false
+  self.amChoking = true // are we choking the peer?
+  self.amInterested = false // are we interested in the peer?
+
+  self.peerChoking = true // is the peer choking us?
+  self.peerInterested = false // is the peer interested in us?
+
   self.peerPieces = []
   self.peerExtensions = {}
 
@@ -167,27 +169,27 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
 }
 
 Wire.prototype.choke = function () {
-  if (this.choking) return
-  this.choking = true
+  if (this.amChoking) return
+  this.amChoking = true
   while (this.peerRequests.length) this.peerRequests.pop()
   this._push(MESSAGE_CHOKE)
 }
 
 Wire.prototype.unchoke = function () {
-  if (!this.choking) return
-  this.choking = false
+  if (!this.amChoking) return
+  this.amChoking = false
   this._push(MESSAGE_UNCHOKE)
 }
 
 Wire.prototype.interested = function () {
-  if (this.interested) return
-  this.interested = true
+  if (this.amInterested) return
+  this.amInterested = true
   this._push(MESSAGE_INTERESTED)
 }
 
 Wire.prototype.uninterested = function () {
-  if (!this.interested) return
-  this.interested = false
+  if (!this.amInterested) return
+  this.amInterested = false
   this._push(MESSAGE_UNINTERESTED)
 }
 
@@ -300,12 +302,13 @@ Wire.prototype._onhave = function (i) {
 }
 
 Wire.prototype._onrequest = function (i, offset, length) {
-  if (this.choking) return
+  if (this.amChoking) return
 
   var respond = function (err, buffer) {
-    if (err || request !== pull(this.peerRequests, i, offset, length)) return
+    if (err || request !== pull(this.peerRequests, i, offset, length))
+      return
     this.piece(i, offset, buffer)
-  }
+  }.bind(this)
 
   var request = new Request(i, offset, length, respond)
   this.peerRequests.push(request)
@@ -383,7 +386,7 @@ Wire.prototype._parse = function (size, parser) {
  * @param  {string}   encoding
  * @param  {function} cb
  */
-Wire.prototype._write = function (data, encoding, cb) {
+Wire.prototype._write = function (data, encoding, callback) {
   this._bufferSize += data.length
   this._buffer.push(data)
 
@@ -398,7 +401,7 @@ Wire.prototype._write = function (data, encoding, cb) {
     this._parser(buffer.slice(0, this._parserSize))
   }
 
-  cb(null) // Signal that we're ready for more data
+  callback(null) // Signal that we're ready for more data
 }
 
 /**

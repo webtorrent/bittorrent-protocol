@@ -9,7 +9,6 @@ test('No timeout when peer is good', function (t) {
   wire.setTimeout(1000)
   wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
 
-
   wire.on('unchoke', function () {
     var requests = 0
 
