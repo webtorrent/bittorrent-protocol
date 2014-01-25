@@ -140,6 +140,17 @@ function Wire () {
   })
 }
 
+
+//
+// MESSAGES
+//
+
+/**
+ * Message: "handshake" <pstrlen><pstr><reserved><info_hash><peer_id>
+ * @param  {Buffer|string} infoHash
+ * @param  {Buffer|string} peerId
+ * @param  {Object} extensions
+ */
 Wire.prototype.handshake = function (infoHash, peerId, extensions) {
   if (typeof infoHash === 'string')
     infoHash = new Buffer(infoHash, 'hex')
@@ -156,7 +167,6 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
 }
 
 Wire.prototype.choke = function () {
-
   if (this.choking) return
   this.choking = true
   while (this.peerRequests.length) this.peerRequests.pop()
@@ -210,17 +220,24 @@ Wire.prototype.cancel = function (i, offset, length) {
   this._message(8, [i, offset, length], null)
 }
 
+
+/**
+ * Message: "port" <len=0003><id=9><listen-port>
+ * @param {Number} port
+ */
+Wire.prototype.port = function (port) {
+  var message = new Buffer(MESSAGE_PORT)
+  message.writeUInt16BE(port, 5)
+  this._push(message)
+}
+
 Wire.prototype.extended = function (ext_number, msg) {
   var ext_id = new Buffer(1)
   ext_id.writeUInt8(ext_number, 0)
   this._message(20, [], Buffer.concat([ext_id, bncode.encode(msg)]))
 }
 
-Wire.prototype.port = function (port) {
-  var message = new Buffer(MESSAGE_PORT)
-  message.writeUInt16BE(port, 5)
-  this._push(message)
-}
+
 
 Wire.prototype.setKeepAlive = function (bool) {
   clearInterval(this._keepAlive)
@@ -346,9 +363,13 @@ Wire.prototype._message = function (id, numbers, data) {
   if (data) this._push(data)
 }
 
+/**
+ * Push a message to the remote peer.
+ * @param {Buffer} data
+ */
 Wire.prototype._push = function (data) {
   if (this._finished) return
-  this.push(data)
+  return this.push(data)
 }
 
 Wire.prototype._parse = function (size, parser) {
@@ -381,8 +402,8 @@ Wire.prototype._write = function (data, encoding, cb) {
 }
 
 /**
- * Duplex stream method. Called whenever the downstream wants data.
- * No-op since we'll just push data whenever we get it and extra data will be
- * buffered in memory.
+ * Duplex stream method. Called whenever the downstream wants data. No-op
+ * since we'll just push data whenever we get it. Extra data will be buffered
+ * in memory (we don't want to apply backpressure to peers!).
  */
 Wire.prototype._read = function () {}
