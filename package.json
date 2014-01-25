@@ -1,6 +1,6 @@
 {
   "name": "bittorrent-protocol",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Simple, robust, BitTorrent peer wire protocol implementation",
   "main": "index.js",
   "dependencies": {
