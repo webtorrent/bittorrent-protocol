@@ -1,6 +1,6 @@
 module.exports = Wire
 
-var bitfield = require('bitfield')
+var BitField = require('bitfield')
 var bncode = require('bncode')
 var stream = require('stream')
 var util = require('util')
@@ -217,7 +217,14 @@ Wire.prototype.have = function (i) {
   this._message(4, [i], null)
 }
 
+/**
+ * Message "bitfield": <len=0001+X><id=5><bitfield>
+ * @param  {BitField|Buffer} bitfield
+ */
 Wire.prototype.bitfield = function (bitfield) {
+  if (!Buffer.isBuffer(bitfield))
+    bitfield = bitfield.buffer
+
   this._message(5, [], bitfield)
 }
 
@@ -308,7 +315,7 @@ Wire.prototype._onunchoke = function () {
 }
 
 Wire.prototype._onbitfield = function (buffer) {
-  var pieces = bitfield(buffer)
+  var pieces = new BitField(buffer)
   for (var i = 0; i < 8 * buffer.length; i++) {
     this.peerPieces[i] = pieces.get(i)
   }
