@@ -172,6 +172,9 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
   this._push(Buffer.concat([MESSAGE_PROTOCOL, reserved, infoHash, peerId]))
 }
 
+/**
+ * Message "choke": <len=0001><id=0>
+ */
 Wire.prototype.choke = function () {
   if (this.amChoking) return
   this.amChoking = true
@@ -179,24 +182,37 @@ Wire.prototype.choke = function () {
   this._push(MESSAGE_CHOKE)
 }
 
+/**
+ * Message "unchoke": <len=0001><id=1>
+ */
 Wire.prototype.unchoke = function () {
   if (!this.amChoking) return
   this.amChoking = false
   this._push(MESSAGE_UNCHOKE)
 }
 
+/**
+ * Message "interested": <len=0001><id=2>
+ */
 Wire.prototype.interested = function () {
   if (this.amInterested) return
   this.amInterested = true
   this._push(MESSAGE_INTERESTED)
 }
 
+/**
+ * Message "uninterested": <len=0001><id=3>
+ */
 Wire.prototype.uninterested = function () {
   if (!this.amInterested) return
   this.amInterested = false
   this._push(MESSAGE_UNINTERESTED)
 }
 
+/**
+ * Message "have": <len=0005><id=4><piece index>
+ * @param  {number} i
+ */
 Wire.prototype.have = function (i) {
   this._message(4, [i], null)
 }
