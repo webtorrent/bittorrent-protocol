@@ -210,7 +210,7 @@ Wire.prototype.piece = function (i, offset, buffer) {
  * @param  {number} length
  */
 Wire.prototype.cancel = function (i, offset, length) {
-  this._callback(this._pull(this.requests, i, offset, length), new Error('request was cancelled'), null)
+  this._callback(pull(this.requests, i, offset, length), new Error('request was cancelled'), null)
   this._message(8, [i, offset, length], null)
 }
 
@@ -287,7 +287,7 @@ Wire.prototype._onrequest = function (i, offset, length) {
   if (this.amChoking) return
 
   var respond = function (err, buffer) {
-    if (err || request !== this._pull(this.peerRequests, i, offset, length))
+    if (err || request !== pull(this.peerRequests, i, offset, length))
       return
     this.piece(i, offset, buffer)
   }.bind(this)
@@ -298,14 +298,14 @@ Wire.prototype._onrequest = function (i, offset, length) {
 }
 
 Wire.prototype._onpiece = function (i, offset, buffer) {
-  this._callback(this._pull(this.requests, i, offset, buffer.length), null, buffer)
+  this._callback(pull(this.requests, i, offset, buffer.length), null, buffer)
   this.downloaded += buffer.length
   this.emit('download', buffer.length)
   this.emit('piece', i, offset, buffer)
 }
 
 Wire.prototype._oncancel = function (i, offset, length) {
-  this._pull(this.peerRequests, i, offset, length)
+  pull(this.peerRequests, i, offset, length)
   this.emit('cancel', i, offset, length)
 }
 
@@ -323,19 +323,53 @@ Wire.prototype._ontimeout = function () {
 }
 
 //
-// HELPER METHODS
+// STREAM METHODS
 //
 
-Wire.prototype._pull = function (requests, piece, offset, length) {
-  for (var i = 0; i < requests.length; i++) {
-    var req = requests[i]
-    if (req.piece !== piece || req.offset !== offset || req.length !== length) continue
-    if (i === 0) requests.shift()
-    else requests.splice(i, 1)
-    return req
-  }
-  return null
+/**
+ * Push a message to the remote peer.
+ * @param {Buffer} data
+ */
+Wire.prototype._push = function (data) {
+  if (this._finished) return
+  return this.push(data)
 }
+
+/**
+ * Duplex stream method. Called whenever the upstream has data for us.
+ * @param  {Buffer|string} data
+ * @param  {string}   encoding
+ * @param  {function} cb
+ */
+Wire.prototype._write = function (data, encoding, cb) {
+  this._bufferSize += data.length
+  this._buffer.push(data)
+
+  while (this._bufferSize >= this._parserSize) {
+    var buffer = (this._buffer.length === 1)
+      ? this._buffer[0]
+      : Buffer.concat(this._buffer)
+    this._bufferSize -= this._parserSize
+    this._buffer = this._bufferSize
+      ? [buffer.slice(this._parserSize)]
+      : []
+    this._parser(buffer.slice(0, this._parserSize))
+  }
+
+  cb(null) // Signal that we're ready for more data
+}
+
+/**
+ * Duplex stream method. Called whenever the downstream wants data. No-op
+ * since we'll just push data whenever we get it. Extra data will be buffered
+ * in memory (we don't want to apply backpressure to peers!).
+ */
+Wire.prototype._read = function () {}
+
+
+//
+// HELPER METHODS
+//
 
 Wire.prototype._callback = function (request, err, buffer) {
   if (!request)
@@ -455,46 +489,16 @@ Wire.prototype._onfinish = function () {
     this._callback(this.requests.shift(), new Error('wire was closed'), null)
 }
 
-//
-// STREAM METHODS
-//
-
-/**
- * Push a message to the remote peer.
- * @param {Buffer} data
- */
-Wire.prototype._push = function (data) {
-  if (this._finished) return
-  return this.push(data)
-}
-
-/**
- * Duplex stream method. Called whenever the upstream has data for us.
- * @param  {Buffer|string} data
- * @param  {string}   encoding
- * @param  {function} cb
- */
-Wire.prototype._write = function (data, encoding, cb) {
-  this._bufferSize += data.length
-  this._buffer.push(data)
-
-  while (this._bufferSize >= this._parserSize) {
-    var buffer = (this._buffer.length === 1)
-      ? this._buffer[0]
-      : Buffer.concat(this._buffer)
-    this._bufferSize -= this._parserSize
-    this._buffer = this._bufferSize
-      ? [buffer.slice(this._parserSize)]
-      : []
-    this._parser(buffer.slice(0, this._parserSize))
+function pull (requests, piece, offset, length) {
+  for (var i = 0; i < requests.length; i++) {
+    var req = requests[i]
+    if (req.piece !== piece || req.offset !== offset || req.length !== length)
+      continue
+    if (i === 0)
+      requests.shift()
+    else
+      requests.splice(i, 1)
+    return req
   }
-
-  cb(null) // Signal that we're ready for more data
+  return null
 }
-
-/**
- * Duplex stream method. Called whenever the downstream wants data. No-op
- * since we'll just push data whenever we get it. Extra data will be buffered
- * in memory (we don't want to apply backpressure to peers!).
- */
-Wire.prototype._read = function () {}
