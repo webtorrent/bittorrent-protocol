@@ -202,7 +202,6 @@ Wire.prototype.have = function (i) {
 }
 
 Wire.prototype.bitfield = function (bitfield) {
-  if (bitfield.buffer) bitfield = bitfield.buffer // support bitfield objects
   this._message(5, [], bitfield)
 }
 
