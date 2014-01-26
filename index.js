@@ -162,8 +162,12 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
     throw new Error('infoHash and peerId MUST have length 20')
 
   var reserved = new Buffer(MESSAGE_RESERVED)
-  if (extensions && extensions.dht) reserved[7] |= 1
-  reserved[5] |= 0x10 // enable extended message
+
+  // enable extended message
+  reserved[5] |= 0x10
+
+  if (extensions && extensions.dht)
+    reserved[7] |= 1
 
   this._push(Buffer.concat([MESSAGE_PROTOCOL, reserved, infoHash, peerId]))
 }
@@ -363,7 +367,8 @@ Wire.prototype._message = function (id, numbers, data) {
   }
 
   this._push(buffer)
-  if (data) this._push(data)
+  if (data)
+    this._push(data)
 }
 
 /**
