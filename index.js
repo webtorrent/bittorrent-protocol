@@ -31,7 +31,6 @@ function Request (piece, offset, length, callback) {
   this.offset = offset
   this.length = length
   this.callback = callback
-  this.timeout = null
 }
 
 util.inherits(Wire, stream.Duplex)
@@ -59,6 +58,8 @@ function Wire () {
 
   self._keepAlive = null
   self._finished = false
+  self._timeout = null
+  self._timeoutMs = 0
 
   self.on('finish', function () {
     self._finished = true
@@ -70,14 +71,6 @@ function Wire () {
     while (self.requests.length)
       self._callback(self.requests.shift(), new Error('wire is closed'), null)
   })
-
-  var ontimeout = function () {
-    self._callback(self.requests.shift(), new Error('request has timed out'), null)
-    self.emit('timeout')
-  }
-
-  self._timeout = 0
-  self._ontimeout = ontimeout
 
   var onmessagelength = function (buffer) {
     var length = buffer.readUInt32BE(0)
@@ -142,6 +135,15 @@ function Wire () {
   })
 }
 
+/**
+ * Set the amount of time to wait before considering a request to be "timed out"
+ * @param {number} ms
+ */
+Wire.prototype.setTimeout = function (ms) {
+  this._clearTimeout()
+  this._timeoutMs = ms
+  this._updateTimeout()
+}
 
 //
 // MESSAGES
@@ -273,11 +275,7 @@ Wire.prototype.setKeepAlive = function (bool) {
   this._keepAlive = setInterval(this._push.bind(this, MESSAGE_KEEP_ALIVE), 60000)
 }
 
-Wire.prototype.setTimeout = function (ms, fn) {
-  if (this.requests.length) clearTimeout(this.requests[0].timeout)
-  this._timeout = ms
-  this._updateTimeout()
-  if (fn) this.on('timeout', fn)
+Wire.prototype._onhandshake = function (infoHash, peerId, extensions) {
 }
 
 Wire.prototype.destroy = function () {
@@ -362,20 +360,35 @@ Wire.prototype._onextended = function (ext) {
 }
 
 // helpers and streams
+Wire.prototype._ontimeout = function () {
+  this._callback(this.requests.shift(), new Error('request has timed out'), null)
+  this.emit('timeout')
+}
 
 Wire.prototype._callback = function (request, err, buffer) {
-  if (!request) return
-  if (request.timeout)
-    clearTimeout(request.timeout)
+  if (!request)
+    return
+
+  this._clearTimeout()
+
   if (!this.peerChoking && !this._finished)
     this._updateTimeout()
   request.callback(err, buffer)
 }
 
-Wire.prototype._updateTimeout = function () {
-  if (!this._timeout || !this.requests.length || this.requests[0].timeout)
+Wire.prototype._clearTimeout = function () {
+  if (!this._timeout)
     return
-  this.requests[0].timeout = setTimeout(this._ontimeout, this._timeout)
+
+  clearTimeout(this._timeout)
+  this._timeout = null
+}
+
+Wire.prototype._updateTimeout = function () {
+  if (!this._timeoutMs || !this.requests.length || this._timeout)
+    return
+
+  this._timeout = setTimeout(this._ontimeout.bind(this), this._timeoutMs)
 }
 
 Wire.prototype._message = function (id, numbers, data) {
