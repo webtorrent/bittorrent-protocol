@@ -2,8 +2,8 @@ module.exports = Wire
 
 var BitField = require('bitfield')
 var bncode = require('bncode')
+var inherits = require('inherits')
 var stream = require('stream')
-var util = require('util')
 
 var MESSAGE_PROTOCOL     = new Buffer('\u0013BitTorrent protocol')
 var MESSAGE_KEEP_ALIVE   = new Buffer([0x00,0x00,0x00,0x00])
@@ -22,7 +22,7 @@ function Request (piece, offset, length, callback) {
   this.callback = callback
 }
 
-util.inherits(Wire, stream.Duplex)
+inherits(Wire, stream.Duplex)
 
 function Wire () {
   var self = this
@@ -79,7 +79,6 @@ Wire.prototype.setTimeout = function (ms) {
   this._timeoutMs = ms
   this._updateTimeout()
 }
-
 
 Wire.prototype.destroy = function () {
   this.emit('close')
