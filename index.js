@@ -89,7 +89,7 @@ Wire.prototype.destroy = function () {
 
 /**
  * Message: "handshake" <pstrlen><pstr><reserved><info_hash><peer_id>
- * @param  {Buffer|string} infoHash
+ * @param  {Buffer|string} infoHash (as Buffer or *hex* string)
  * @param  {Buffer|string} peerId
  * @param  {Object} extensions
  */
@@ -97,7 +97,7 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
   if (typeof infoHash === 'string')
     infoHash = new Buffer(infoHash, 'hex')
   if (typeof peerId === 'string')
-    peerId = new Buffer(peerId)
+    peerId = new Buffer(peerId, 'hex')
   if (infoHash.length !== 20 || peerId.length !== 20)
     throw new Error('infoHash and peerId MUST have length 20')
 
