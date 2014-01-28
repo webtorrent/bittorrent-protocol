@@ -25,39 +25,37 @@ function Request (piece, offset, length, callback) {
 inherits(Wire, stream.Duplex)
 
 function Wire () {
-  var self = this
   if (!(this instanceof Wire)) return new Wire()
-
   stream.Duplex.call(this)
 
-  self.amChoking = true // are we choking the peer?
-  self.amInterested = false // are we interested in the peer?
+  this.amChoking = true // are we choking the peer?
+  this.amInterested = false // are we interested in the peer?
 
-  self.peerChoking = true // is the peer choking us?
-  self.peerInterested = false // is the peer interested in us?
+  this.peerChoking = true // is the peer choking us?
+  this.peerInterested = false // is the peer interested in us?
 
-  self.peerPieces = []
-  self.peerExtensions = {}
+  this.peerPieces = []
+  this.peerExtensions = {}
 
-  self.requests = []
-  self.peerRequests = []
+  this.requests = []
+  this.peerRequests = []
 
-  self.uploaded = 0
-  self.downloaded = 0
+  this.uploaded = 0
+  this.downloaded = 0
 
-  self._keepAlive = null
-  self._finished = false
-  self._timeout = null
-  self._timeoutMs = 0
+  this._keepAlive = null
+  this._finished = false
+  this._timeout = null
+  this._timeoutMs = 0
 
-  self._buffer = []
-  self._bufferSize = 0
-  self._parser = null
-  self._parserSize = 0
+  this._buffer = []
+  this._bufferSize = 0
+  this._parser = null
+  this._parserSize = 0
 
-  self.on('finish', self._onfinish)
+  this.on('finish', this._onfinish)
 
-  self._parseHandshake()
+  this._parseHandshake()
 }
 
 /**
