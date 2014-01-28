@@ -17,6 +17,22 @@ test('Handshake', function (t) {
   wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
 })
 
+test('Handshake (with string args)', function (t) {
+  t.plan(4)
+
+  var wire = Protocol()
+  wire.pipe(wire)
+
+  wire.on('handshake', function (infoHash, peerId) {
+    t.equal(infoHash.length, 20)
+    t.equal(infoHash.toString(), '01234567890123456789')
+    t.equal(peerId.length, 20)
+    t.equal(peerId.toString(), '12345678901234567890')
+  })
+
+  wire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
+})
+
 test('Unchoke', function (t) {
   t.plan(4)
 
