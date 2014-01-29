@@ -241,6 +241,7 @@ Wire.prototype._onkeepalive = function () {
 }
 
 Wire.prototype._onhandshake = function (infoHash, peerId, extensions) {
+  this.peerId = peerId
   this.peerExtensions = extensions
   this.emit('handshake', infoHash, peerId, extensions)
 }
