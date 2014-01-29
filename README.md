@@ -1,18 +1,22 @@
 # bittorrent-protocol
-### Simple, robust, BitTorrent peer wire protocol implementation
+[![Build Status](http://img.shields.io/travis/feross/bittorrent-protocol.svg)](https://travis-ci.org/feross/bittorrent-protocol)
+[![NPM Version](http://img.shields.io/npm/v/bittorrent-protocol.svg)](https://npmjs.org/package/bittorrent-protocol)
+[![NPM](http://img.shields.io/npm/dm/bittorrent-protocol.svg)](https://npmjs.org/package/bittorrent-protocol)
+[![Gittip](http://img.shields.io/gittip/feross.svg)](https://www.gittip.com/feross/)
 
-[![Build Status](https://travis-ci.org/feross/bittorrent-protocol.png?branch=master)](https://travis-ci.org/feross/bittorrent-protocol)
-[![Dependency Status](https://david-dm.org/feross/bittorrent-protocol.png)](https://david-dm.org/feross/bittorrent-protocol)
+### Simple, robust, BitTorrent wire protocol implementation
 
 [![browser support](https://ci.testling.com/feross/bittorrent-protocol.png)](https://ci.testling.com/feross/bittorrent-protocol)
 
-Node.js implementation of the [BitTorrent peer wire protocol specification](https://wiki.theory.org/BitTorrentSpecification#Peer_wire_protocol_.28TCP.29).
+Node.js implementation of the [BitTorrent peer wire protocol](https://wiki.theory.org/BitTorrentSpecification#Peer_wire_protocol_.28TCP.29).
 
 The protocol is the main communication layer for BitTorrent file transfer and is used by [WebTorrent](https://github.com/feross/WebTorrent).
 
 ## install
 
-`npm install bittorrent-protocol`
+```
+npm install bittorrent-protocol
+```
 
 ## Usage is simple
 
@@ -189,6 +193,4 @@ wire.on('upload', function(numberOfBytes) {
 
 ## license
 
-MIT
-
-This was originally forked from [peer-wire-protocol](https://github.com/mafintosh/peer-wire-protocol) which is also MIT licensed.
+MIT. Copyright (c) [Feross Aboukhadijeh](http://feross.org). Originally forked from [peer-wire-protocol](https://github.com/mafintosh/peer-wire-protocol) which is also MIT.
