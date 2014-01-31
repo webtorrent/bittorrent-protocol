@@ -44,9 +44,11 @@ function Wire () {
   this.downloaded = 0
 
   this._keepAlive = null
-  this._finished = false
   this._timeout = null
   this._timeoutMs = 0
+
+  this.destroyed = false // was the wire ended by calling `destroy`?
+  this._finished = false
 
   this._buffer = []
   this._bufferSize = 0
@@ -76,6 +78,11 @@ Wire.prototype.setTimeout = function (ms) {
   this._clearTimeout()
   this._timeoutMs = ms
   this._updateTimeout()
+}
+
+Wire.prototype.destroy = function () {
+  this.destroyed = true
+  this.end()
 }
 
 //
