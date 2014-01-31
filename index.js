@@ -481,7 +481,10 @@ Wire.prototype._parseHandshake = function () {
 
 Wire.prototype._onfinish = function () {
   this._finished = true
-  this.push(null) // stream cannot be half open
+
+  this.push(null) // stream cannot be half open, so signal the end of it
+  while (this.read()) // consume and discard the rest of the stream data
+
   clearInterval(this._keepAlive)
   this._parse(Number.MAX_VALUE, function () {})
   this.peerRequests = []
