@@ -463,7 +463,7 @@ Wire.prototype._parseHandshake = function () {
     this._parse(pstrlen + 48, function (handshake) {
       var protocol = handshake.slice(0, pstrlen)
       if (protocol.toString() !== 'BitTorrent protocol') {
-        this.emit('error', 'Wire not speaking BitTorrent protocol: ', protocol)
+        console.error('Wire not speaking BitTorrent protocol: ', protocol.toString())
         this.destroy()
         return
       }
