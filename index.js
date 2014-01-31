@@ -78,11 +78,6 @@ Wire.prototype.setTimeout = function (ms) {
   this._updateTimeout()
 }
 
-Wire.prototype.destroy = function () {
-  this.emit('close')
-  this.end()
-}
-
 //
 // OUTGOING MESSAGES
 //
@@ -464,7 +459,7 @@ Wire.prototype._parseHandshake = function () {
       var protocol = handshake.slice(0, pstrlen)
       if (protocol.toString() !== 'BitTorrent protocol') {
         console.error('Wire not speaking BitTorrent protocol: ', protocol.toString())
-        this.destroy()
+        this.end()
         return
       }
       handshake = handshake.slice(pstrlen)

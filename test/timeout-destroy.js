@@ -32,7 +32,7 @@ test('Timeout and destroy when peer does not respond', function (t) {
 
   wire.on('timeout', function() {
     t.ok(++timeouts === 1)
-    wire.destroy()
+    wire.end()
   })
 
   wire.unchoke()
