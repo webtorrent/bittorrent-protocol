@@ -8,9 +8,9 @@
 
 [![browser support](https://ci.testling.com/feross/bittorrent-protocol.png)](https://ci.testling.com/feross/bittorrent-protocol)
 
-Node.js implementation of the [BitTorrent peer wire protocol](https://wiki.theory.org/BitTorrentSpecification#Peer_wire_protocol_.28TCP.29).
+Node.js implementation of the [BitTorrent peer wire protocol](https://wiki.theory.org/BitTorrentSpecification#Peer_wire_protocol_.28TCP.29). The protocol is the main communication layer for BitTorrent file transfer.
 
-The protocol is the main communication layer for BitTorrent file transfer and is used by [WebTorrent](https://github.com/feross/WebTorrent).
+Also works in the browser with [browserify](http://browserify.org/)! This module is used by [WebTorrent](http://webtorrent.io).
 
 ## install
 
