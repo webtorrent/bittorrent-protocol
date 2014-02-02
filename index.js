@@ -225,12 +225,11 @@ Wire.prototype.port = function (port) {
 
 /**
  * Message: "extended" <len=0005+X><id=20><ext-number><payload>
- * @param  {number} extNumber
+ * @param  {number} ext
  * @param  {Object} obj
  */
-Wire.prototype.extended = function (extNumber, obj) {
-  var ext_id = new Buffer(1)
-  ext_id.writeUInt8(extNumber, 0)
+Wire.prototype.extended = function (ext, obj) {
+  var ext_id = new Buffer([ext])
   this._message(20, [], Buffer.concat([ext_id, bncode.encode(obj)]))
 }
 
@@ -313,8 +312,8 @@ Wire.prototype._onport = function (port) {
   this.emit('port', port)
 }
 
-Wire.prototype._onextended = function (ext) {
-  this.emit('extended', ext)
+Wire.prototype._onextended = function (ext, buf) {
+  this.emit('extended', ext, buf)
 }
 
 Wire.prototype._ontimeout = function () {
@@ -454,7 +453,7 @@ Wire.prototype._onmessage = function (buffer) {
     case 9:
       return this._onport(buffer.readUInt16BE(1))
     case 20:
-      return this._onextended(bncode.decode(buffer))
+      return this._onextended(buffer.readUInt8(1), buffer.slice(2))
   }
   this.emit('unknownmessage', buffer)
 }
