@@ -1,8 +1,15 @@
 {
   "name": "bittorrent-protocol",
-  "version": "0.6.1",
   "description": "Simple, robust, BitTorrent peer wire protocol implementation",
-  "main": "index.js",
+  "version": "0.6.1",
+  "author": {
+    "name": "Feross Aboukhadijeh",
+    "email": "feross@feross.org",
+    "url": "http://feross.org/"
+  },
+  "bugs": {
+    "url": "https://github.com/feross/bittorrent-protocol/issues"
+  },
   "dependencies": {
     "bitfield": "~0.1.0",
     "bncode": "~0.5.0",
@@ -10,6 +17,23 @@
   },
   "devDependencies": {
     "tape": "2.x"
+  },
+  "homepage": "http://webtorrent.io",
+  "keywords": [
+    "torrent",
+    "bittorrent",
+    "protocol",
+    "stream",
+    "peer",
+    "wire",
+    "p2p",
+    "peer-to-peer"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/feross/bittorrent-protocol.git"
   },
   "scripts": {
     "test": "tape test/*.js"
@@ -23,28 +47,5 @@
       "safari/6..latest",
       "opera/15.0..latest"
     ]
-  },
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/feross/bittorrent-protocol.git"
-  },
-  "keywords": [
-    "torrent",
-    "bittorrent",
-    "protocol",
-    "stream",
-    "peer",
-    "wire",
-    "p2p",
-    "peer-to-peer"
-  ],
-  "author": {
-    "name": "Feross Aboukhadijeh",
-    "email": "feross@feross.org",
-    "url": "http://feross.org/"
-  },
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/feross/bittorrent-protocol/issues"
   }
 }
