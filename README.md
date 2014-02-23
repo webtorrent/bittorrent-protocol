@@ -1,8 +1,8 @@
 # bittorrent-protocol
-[![Build Status](http://img.shields.io/travis/feross/bittorrent-protocol.png)](https://travis-ci.org/feross/bittorrent-protocol)
-[![NPM Version](http://img.shields.io/npm/v/bittorrent-protocol.png)](https://npmjs.org/package/bittorrent-protocol)
-[![NPM](http://img.shields.io/npm/dm/bittorrent-protocol.png)](https://npmjs.org/package/bittorrent-protocol)
-[![Gittip](http://img.shields.io/gittip/feross.png)](https://www.gittip.com/feross/)
+[![Build Status](http://img.shields.io/travis/feross/bittorrent-protocol.svg)](https://travis-ci.org/feross/bittorrent-protocol)
+[![NPM Version](http://img.shields.io/npm/v/bittorrent-protocol.svg)](https://npmjs.org/package/bittorrent-protocol)
+[![NPM](http://img.shields.io/npm/dm/bittorrent-protocol.svg)](https://npmjs.org/package/bittorrent-protocol)
+[![Gittip](http://img.shields.io/gittip/feross.svg)](https://www.gittip.com/feross/)
 
 ### Simple, robust, BitTorrent wire protocol implementation
 
