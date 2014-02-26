@@ -153,10 +153,10 @@ Wire.prototype.uninterested = function () {
 
 /**
  * Message "have": <len=0005><id=4><piece index>
- * @param  {number} i
+ * @param  {number} index
  */
-Wire.prototype.have = function (i) {
-  this._message(4, [i], null)
+Wire.prototype.have = function (index) {
+  this._message(4, [index], null)
 }
 
 /**
@@ -172,12 +172,12 @@ Wire.prototype.bitfield = function (bitfield) {
 
 /**
  * Message "request": <len=0013><id=6><index><begin><length>
- * @param  {number}   i
+ * @param  {number}   index
  * @param  {number}   offset
  * @param  {number}   length
  * @param  {function} cb
  */
-Wire.prototype.request = function (i, offset, length, cb) {
+Wire.prototype.request = function (index, offset, length, cb) {
   if (!cb) cb = function () {}
 
   if (this._finished)
@@ -185,32 +185,36 @@ Wire.prototype.request = function (i, offset, length, cb) {
   if (this.peerChoking)
     return cb(new Error('peer is choking'))
 
-  this.requests.push(new Request(i, offset, length, cb))
+  this.requests.push(new Request(index, offset, length, cb))
   this._updateTimeout()
-  this._message(6, [i, offset, length], null)
+  this._message(6, [index, offset, length], null)
 }
 
 /**
  * Message "piece": <len=0009+X><id=7><index><begin><block>
- * @param  {number} i
+ * @param  {number} index
  * @param  {number} offset
  * @param  {Buffer} buffer
  */
-Wire.prototype.piece = function (i, offset, buffer) {
+Wire.prototype.piece = function (index, offset, buffer) {
   this.uploaded += buffer.length
   this.emit('upload', buffer.length)
-  this._message(7, [i, offset], buffer)
+  this._message(7, [index, offset], buffer)
 }
 
 /**
  * Message "cancel": <len=0013><id=8><index><begin><length>
- * @param  {number} i
+ * @param  {number} index
  * @param  {number} offset
  * @param  {number} length
  */
-Wire.prototype.cancel = function (i, offset, length) {
-  this._callback(pull(this.requests, i, offset, length), new Error('request was cancelled'), null)
-  this._message(8, [i, offset, length], null)
+Wire.prototype.cancel = function (index, offset, length) {
+  this._callback(
+    pull(this.requests, index, offset, length),
+    new Error('request was cancelled'),
+    null
+  )
+  this._message(8, [index, offset, length], null)
 }
 
 /**
@@ -237,44 +241,44 @@ Wire.prototype.extended = function (ext, obj) {
 // INCOMING MESSAGES
 //
 
-Wire.prototype._onkeepalive = function () {
+Wire.prototype._onKeepAlive = function () {
   this.emit('keep-alive')
 }
 
-Wire.prototype._onhandshake = function (infoHash, peerId, extensions) {
+Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
   this.peerId = peerId
   this.peerExtensions = extensions
   this.emit('handshake', infoHash, peerId, extensions)
 }
 
-Wire.prototype._onchoke = function () {
+Wire.prototype._onChoke = function () {
   this.peerChoking = true
   this.emit('choke')
   while (this.requests.length)
     this._callback(this.requests.shift(), new Error('peer is choking'), null)
 }
 
-Wire.prototype._onunchoke = function () {
+Wire.prototype._onUnchoke = function () {
   this.peerChoking = false
   this.emit('unchoke')
 }
 
-Wire.prototype._oninterested = function () {
+Wire.prototype._onInterested = function () {
   this.peerInterested = true
   this.emit('interested')
 }
 
-Wire.prototype._onuninterested = function () {
+Wire.prototype._onUninterested = function () {
   this.peerInterested = false
   this.emit('uninterested')
 }
 
-Wire.prototype._onhave = function (i) {
-  this.peerPieces[i] = true
-  this.emit('have', i)
+Wire.prototype._onHave = function (index) {
+  this.peerPieces[index] = true
+  this.emit('have', index)
 }
 
-Wire.prototype._onbitfield = function (buffer) {
+Wire.prototype._onBitField = function (buffer) {
   var pieces = new BitField(buffer)
   for (var i = 0; i < 8 * buffer.length; i++) {
     this.peerPieces[i] = pieces.get(i)
@@ -282,41 +286,41 @@ Wire.prototype._onbitfield = function (buffer) {
   this.emit('bitfield', pieces)
 }
 
-Wire.prototype._onrequest = function (i, offset, length) {
+Wire.prototype._onRequest = function (index, offset, length) {
   if (this.amChoking) return
 
   var respond = function (err, buffer) {
-    if (err || request !== pull(this.peerRequests, i, offset, length))
+    if (err || request !== pull(this.peerRequests, index, offset, length))
       return
-    this.piece(i, offset, buffer)
+    this.piece(index, offset, buffer)
   }.bind(this)
 
-  var request = new Request(i, offset, length, respond)
+  var request = new Request(index, offset, length, respond)
   this.peerRequests.push(request)
-  this.emit('request', i, offset, length, respond)
+  this.emit('request', index, offset, length, respond)
 }
 
-Wire.prototype._onpiece = function (i, offset, buffer) {
-  this._callback(pull(this.requests, i, offset, buffer.length), null, buffer)
+Wire.prototype._onPiece = function (index, offset, buffer) {
+  this._callback(pull(this.requests, index, offset, buffer.length), null, buffer)
   this.downloaded += buffer.length
   this.emit('download', buffer.length)
-  this.emit('piece', i, offset, buffer)
+  this.emit('piece', index, offset, buffer)
 }
 
-Wire.prototype._oncancel = function (i, offset, length) {
-  pull(this.peerRequests, i, offset, length)
-  this.emit('cancel', i, offset, length)
+Wire.prototype._onCancel = function (index, offset, length) {
+  pull(this.peerRequests, index, offset, length)
+  this.emit('cancel', index, offset, length)
 }
 
-Wire.prototype._onport = function (port) {
+Wire.prototype._onPort = function (port) {
   this.emit('port', port)
 }
 
-Wire.prototype._onextended = function (ext, buf) {
+Wire.prototype._onExtended = function (ext, buf) {
   this.emit('extended', ext, buf)
 }
 
-Wire.prototype._ontimeout = function () {
+Wire.prototype._onTimeout = function () {
   this._callback(this.requests.shift(), new Error('request has timed out'), null)
   this.emit('timeout')
 }
@@ -393,7 +397,7 @@ Wire.prototype._updateTimeout = function () {
   if (!this._timeoutMs || !this.requests.length || this._timeout)
     return
 
-  this._timeout = setTimeout(this._ontimeout.bind(this), this._timeoutMs)
+  this._timeout = setTimeout(this._onTimeout.bind(this), this._timeoutMs)
 }
 
 Wire.prototype._parse = function (size, parser) {
@@ -421,7 +425,7 @@ Wire.prototype._onmessagelength = function (buffer) {
   if (length > 0) {
     this._parse(length, this._onmessage)
   } else {
-    this._onkeepalive()
+    this._onKeepAlive()
     this._parse(4, this._onmessagelength)
   }
 }
@@ -430,30 +434,30 @@ Wire.prototype._onmessage = function (buffer) {
   this._parse(4, this._onmessagelength)
   switch (buffer[0]) {
     case 0:
-      return this._onchoke()
+      return this._onChoke()
     case 1:
-      return this._onunchoke()
+      return this._onUnchoke()
     case 2:
-      return this._oninterested()
+      return this._onInterested()
     case 3:
-      return this._onuninterested()
+      return this._onUninterested()
     case 4:
-      return this._onhave(buffer.readUInt32BE(1))
+      return this._onHave(buffer.readUInt32BE(1))
     case 5:
-      return this._onbitfield(buffer.slice(1))
+      return this._onBitField(buffer.slice(1))
     case 6:
-      return this._onrequest(buffer.readUInt32BE(1),
+      return this._onRequest(buffer.readUInt32BE(1),
           buffer.readUInt32BE(5), buffer.readUInt32BE(9))
     case 7:
-      return this._onpiece(buffer.readUInt32BE(1),
+      return this._onPiece(buffer.readUInt32BE(1),
           buffer.readUInt32BE(5), buffer.slice(9))
     case 8:
-      return this._oncancel(buffer.readUInt32BE(1),
+      return this._onCancel(buffer.readUInt32BE(1),
           buffer.readUInt32BE(5), buffer.readUInt32BE(9))
     case 9:
-      return this._onport(buffer.readUInt16BE(1))
+      return this._onPort(buffer.readUInt16BE(1))
     case 20:
-      return this._onextended(buffer.readUInt8(1), buffer.slice(2))
+      return this._onExtended(buffer.readUInt8(1), buffer.slice(2))
   }
   this.emit('unknownmessage', buffer)
 }
@@ -469,7 +473,7 @@ Wire.prototype._parseHandshake = function () {
         return
       }
       handshake = handshake.slice(pstrlen)
-      this._onhandshake(handshake.slice(8, 28), handshake.slice(28, 48), {
+      this._onHandshake(handshake.slice(8, 28), handshake.slice(28, 48), {
         dht: !!(handshake[7] & 0x01), // see bep_0005
         extended: !!(handshake[5] & 0x10) // see bep_0010
       })
@@ -482,7 +486,7 @@ Wire.prototype._onfinish = function () {
   this._finished = true
 
   this.push(null) // stream cannot be half open, so signal the end of it
-  while (this.read()) // consume and discard the rest of the stream data
+  while (this.read()) {} // consume and discard the rest of the stream data
 
   clearInterval(this._keepAlive)
   this._parse(Number.MAX_VALUE, function () {})
