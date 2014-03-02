@@ -40,6 +40,9 @@ function Wire () {
   this.requests = []
   this.peerRequests = []
 
+  this.extensionMapping = {};
+  this.peerExtensionMapping = {};
+
   this.uploaded = 0
   this.downloaded = 0
 
@@ -233,8 +236,19 @@ Wire.prototype.port = function (port) {
  * @param  {Object} obj
  */
 Wire.prototype.extended = function (ext, obj) {
-  var ext_id = new Buffer([ext])
-  this._message(20, [], Buffer.concat([ext_id, bncode.encode(obj)]))
+  var e = ext;
+  if (typeof ext === 'string' &&
+      this.peerExtensionMapping.hasOwnProperty(ext)) {
+    ext = this.peerExtensionMapping[ext];
+  }
+  if (typeof ext === 'number') {
+      var ext_id = new Buffer([ext])
+      var buf = Buffer.isBuffer(obj) ? obj : bncode.encode(obj)
+
+      this._message(20, [], Buffer.concat([ext_id, buf]))
+  } else {
+      console.warn("Skipping extension", ext);
+  }
 }
 
 //
@@ -249,6 +263,26 @@ Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
   this.peerId = peerId
   this.peerExtensions = extensions
   this.emit('handshake', infoHash, peerId, extensions)
+
+  /* Peer supports BEP-0010, send extended handshake
+   *
+   * Doing this after the 'handshake' event leaves users time to hook
+   * 'extended-handshake' to enable extensions.
+   */
+  if (extensions.extended) {
+      var info = {
+          m: {}
+      };
+      /* Have user fill the info */
+      this.emit('extended-handshake', info);
+      /* Send extended handshake */
+      this.extended(0, bncode.encode(info));
+      /* Keep mapping for receiving extension messages */
+      this.extensionMapping = {};
+      for(var k in info.m) {
+          this.extensionMapping[[info.m[k]]] = k;
+      }
+  }
 }
 
 Wire.prototype._onChoke = function () {
@@ -317,7 +351,21 @@ Wire.prototype._onPort = function (port) {
 }
 
 Wire.prototype._onExtended = function (ext, buf) {
-  this.emit('extended', ext, buf)
+  var info;
+  if (ext === 0 &&
+      (info = bncode.decode(buf))) {
+
+      if (typeof info.m === 'object') {
+          this.peerExtensionMapping = info.m;
+      }
+
+      this.emit('extended', 'handshake', info);
+  } else {
+      if (this.extensionMapping.hasOwnProperty(ext))
+          ext = this.extensionMapping[ext];
+
+      this.emit('extended', ext, buf)
+  }
 }
 
 Wire.prototype._onTimeout = function () {
