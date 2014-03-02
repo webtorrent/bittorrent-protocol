@@ -1,4 +1,5 @@
 module.exports = Wire
+module.exports.MetadataExtension = require('./ext_ut_metadata')
 
 var BitField = require('bitfield')
 var bncode = require('bncode')
