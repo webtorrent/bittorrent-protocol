@@ -100,3 +100,25 @@ test('Request a piece', function (t) {
 
   wire.unchoke()
 })
+
+test('Have', function (t) {
+  t.plan(6)
+
+  var wire = Protocol()
+  wire.pipe(wire)
+
+  wire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
+
+  var haveEvents = 0
+  wire.on('have', function (index) {
+    haveEvents++
+  })
+  t.equal(haveEvents, 0)
+  t.equal(!!wire.peerPieces[0], false)
+  wire._onHave(0)
+  t.equal(haveEvents, 1, 'emitted event for new piece')
+  t.equal(!!wire.peerPieces[0], true)
+  wire._onHave(0)
+  t.equal(haveEvents, 1, 'not emitted event for preexisting piece')
+  t.equal(!!wire.peerPieces[0], true)
+})

@@ -274,6 +274,10 @@ Wire.prototype._onUninterested = function () {
 }
 
 Wire.prototype._onHave = function (index) {
+  if (this.peerPieces[index]) {
+    return
+  }
+
   this.peerPieces[index] = true
   this.emit('have', index)
 }
