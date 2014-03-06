@@ -56,13 +56,11 @@ module.exports = MetadataExtension;
 MetadataExtension.prototype.chunkSize = 16384;
 
 MetadataExtension.prototype._onMessage = function(info, trailer) {
-    console.log("MetadataExtension._onMessage", info, trailer && trailer.length)
     switch(info.msg_type) {
     case 0:
         this.emit('request', info);
         break;
     case 1:
-        console.log("emit data");
         this.emit('data', info, trailer);
         break;
     case 2:
