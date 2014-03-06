@@ -76,11 +76,15 @@ MetadataExtension.prototype.request = function(piece) {
     });
 };
 
-MetadataExtension.prototype.data = function(piece, buf) {
-    this.send({
+MetadataExtension.prototype.data = function(piece, buf, totalSize) {
+    var msg = {
         msg_type: 1,
         piece: piece
-    }, buf);
+    };
+    if (typeof totalSize === 'number') {
+        msg.total_size = totalSize;
+    }
+    this.send(msg, buf);
 };
 
 MetadataExtension.prototype.reject = function(piece) {
