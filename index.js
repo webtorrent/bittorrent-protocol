@@ -35,7 +35,7 @@ function Wire () {
   this.peerChoking = true // is the peer choking us?
   this.peerInterested = false // is the peer interested in us?
 
-  this.peerPieces = []
+  this.peerPieces = new BitField(0)
   this.peerExtensions = {}
 
   this.requests = []
@@ -309,20 +309,17 @@ Wire.prototype._onUninterested = function () {
 }
 
 Wire.prototype._onHave = function (index) {
-  if (this.peerPieces[index]) {
+  if (this.peerPieces.get(index)) {
     return
   }
 
-  this.peerPieces[index] = true
+  this.peerPieces.set(index, true)
   this.emit('have', index)
 }
 
 Wire.prototype._onBitField = function (buffer) {
-  var pieces = new BitField(buffer)
-  for (var i = 0; i < 8 * buffer.length; i++) {
-    this.peerPieces[i] = pieces.get(i)
-  }
-  this.emit('bitfield', pieces)
+  this.peerPieces = new BitField(buffer)
+  this.emit('bitfield', this.peerPieces)
 }
 
 Wire.prototype._onRequest = function (index, offset, length) {

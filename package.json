@@ -11,7 +11,7 @@
     "url": "https://github.com/feross/bittorrent-protocol/issues"
   },
   "dependencies": {
-    "bitfield": "~0.1.0",
+    "bitfield": "git://github.com/astro/bitfield.git",
     "bncode": "~0.5.0",
     "inherits": "~2.0.1"
   },
