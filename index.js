@@ -5,6 +5,7 @@ var BitField = require('bitfield')
 var bncode = require('bncode')
 var inherits = require('inherits')
 var stream = require('stream')
+var speedometer = require('speedometer')
 
 var MESSAGE_PROTOCOL     = new Buffer('\u0013BitTorrent protocol')
 var MESSAGE_KEEP_ALIVE   = new Buffer([0x00,0x00,0x00,0x00])
@@ -46,6 +47,8 @@ function Wire () {
 
   this.uploaded = 0
   this.downloaded = 0
+  this.uploadSpeed = speedometer()
+  this.downloadSpeed = speedometer()
 
   this._keepAlive = null
   this._timeout = null
@@ -208,6 +211,7 @@ Wire.prototype.request = function (index, offset, length, cb) {
  */
 Wire.prototype.piece = function (index, offset, buffer) {
   this.uploaded += buffer.length
+  this.uploadSpeed(buffer.length)
   this.emit('upload', buffer.length)
   this._message(7, [index, offset], buffer)
 }
@@ -345,6 +349,7 @@ Wire.prototype._onRequest = function (index, offset, length) {
 Wire.prototype._onPiece = function (index, offset, buffer) {
   this._callback(pull(this.requests, index, offset, buffer.length), null, buffer)
   this.downloaded += buffer.length
+  this.downloadSpeed(buffer.length)
   this.emit('download', buffer.length)
   this.emit('piece', index, offset, buffer)
 }
