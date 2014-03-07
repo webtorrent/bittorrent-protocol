@@ -4,7 +4,7 @@ var test = require('tape')
 test('Handshake', function (t) {
   t.plan(4)
 
-  var wire = Protocol()
+  var wire = new Protocol()
   wire.pipe(wire)
 
   wire.on('handshake', function (infoHash, peerId) {
@@ -20,7 +20,7 @@ test('Handshake', function (t) {
 test('Handshake (with string args)', function (t) {
   t.plan(4)
 
-  var wire = Protocol()
+  var wire = new Protocol()
   wire.pipe(wire)
 
   wire.on('handshake', function (infoHash, peerId) {
@@ -36,7 +36,7 @@ test('Handshake (with string args)', function (t) {
 test('Unchoke', function (t) {
   t.plan(4)
 
-  var wire = Protocol()
+  var wire = new Protocol()
   wire.pipe(wire)
   wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
 
@@ -54,7 +54,7 @@ test('Unchoke', function (t) {
 test('Interested', function (t) {
   t.plan(4)
 
-  var wire = Protocol()
+  var wire = new Protocol()
   wire.pipe(wire)
   wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
 
@@ -72,7 +72,7 @@ test('Interested', function (t) {
 test('Request a piece', function (t) {
   t.plan(12)
 
-  var wire = Protocol()
+  var wire = new Protocol()
   wire.pipe(wire)
   wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
 
@@ -101,24 +101,28 @@ test('Request a piece', function (t) {
   wire.unchoke()
 })
 
-test('Have', function (t) {
+test('No duplicate `have` events for same piece', function (t) {
   t.plan(6)
 
-  var wire = Protocol()
+  var wire = new Protocol()
   wire.pipe(wire)
 
   wire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
 
   var haveEvents = 0
   wire.on('have', function (index) {
-    haveEvents++
+    haveEvents += 1
   })
   t.equal(haveEvents, 0)
   t.equal(!!wire.peerPieces[0], false)
-  wire._onHave(0)
-  t.equal(haveEvents, 1, 'emitted event for new piece')
-  t.equal(!!wire.peerPieces[0], true)
-  wire._onHave(0)
-  t.equal(haveEvents, 1, 'not emitted event for preexisting piece')
-  t.equal(!!wire.peerPieces[0], true)
+  wire.have(0)
+  setTimeout(function () {
+    t.equal(haveEvents, 1, 'emitted event for new piece')
+    t.equal(!!wire.peerPieces[0], true)
+    wire.have(0)
+    setTimeout(function () {
+      t.equal(haveEvents, 1, 'not emitted event for preexisting piece')
+      t.equal(!!wire.peerPieces[0], true)
+    })
+  })
 })
