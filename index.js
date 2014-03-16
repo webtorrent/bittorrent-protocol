@@ -85,6 +85,12 @@ Wire.prototype.destroy = function () {
   this.end()
 }
 
+Wire.prototype.end = function () {
+  this._onUninterested()
+  this._onChoke()
+  stream.Duplex.prototype.end.apply(this, arguments)
+}
+
 //
 // OUTGOING MESSAGES
 //
