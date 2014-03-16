@@ -1,9 +1,11 @@
 module.exports = Wire
+module.exports.MetadataExtension = require('./ext_ut_metadata')
 
 var BitField = require('bitfield')
 var bncode = require('bncode')
 var inherits = require('inherits')
 var stream = require('stream')
+var speedometer = require('speedometer')
 
 var MESSAGE_PROTOCOL     = new Buffer('\u0013BitTorrent protocol')
 var MESSAGE_KEEP_ALIVE   = new Buffer([0x00,0x00,0x00,0x00])
@@ -34,14 +36,19 @@ function Wire () {
   this.peerChoking = true // is the peer choking us?
   this.peerInterested = false // is the peer interested in us?
 
-  this.peerPieces = []
+  this.peerPieces = new BitField(0)
   this.peerExtensions = {}
 
   this.requests = []
   this.peerRequests = []
 
+  this.extensionMapping = {};
+  this.peerExtensionMapping = {};
+
   this.uploaded = 0
   this.downloaded = 0
+  this.uploadSpeed = speedometer()
+  this.downloadSpeed = speedometer()
 
   this._keepAlive = null
   this._timeout = null
@@ -204,6 +211,7 @@ Wire.prototype.request = function (index, offset, length, cb) {
  */
 Wire.prototype.piece = function (index, offset, buffer) {
   this.uploaded += buffer.length
+  this.uploadSpeed(buffer.length)
   this.emit('upload', buffer.length)
   this._message(7, [index, offset], buffer)
 }
@@ -239,8 +247,19 @@ Wire.prototype.port = function (port) {
  * @param  {Object} obj
  */
 Wire.prototype.extended = function (ext, obj) {
-  var ext_id = new Buffer([ext])
-  this._message(20, [], Buffer.concat([ext_id, bncode.encode(obj)]))
+  var e = ext;
+  if (typeof ext === 'string' &&
+      this.peerExtensionMapping.hasOwnProperty(ext)) {
+    ext = this.peerExtensionMapping[ext];
+  }
+  if (typeof ext === 'number') {
+      var ext_id = new Buffer([ext])
+      var buf = Buffer.isBuffer(obj) ? obj : bncode.encode(obj)
+
+      this._message(20, [], Buffer.concat([ext_id, buf]))
+  } else {
+      console.warn("Skipping extension", ext);
+  }
 }
 
 //
@@ -255,6 +274,26 @@ Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
   this.peerId = peerId
   this.peerExtensions = extensions
   this.emit('handshake', infoHash, peerId, extensions)
+
+  /* Peer supports BEP-0010, send extended handshake
+   *
+   * Doing this after the 'handshake' event leaves users time to hook
+   * 'extended-handshake' to enable extensions.
+   */
+  if (extensions.extended) {
+      var info = {
+          m: {}
+      };
+      /* Have user fill the info */
+      this.emit('extended-handshake', info);
+      /* Send extended handshake */
+      this.extended(0, bncode.encode(info));
+      /* Keep mapping for receiving extension messages */
+      this.extensionMapping = {};
+      for(var k in info.m) {
+          this.extensionMapping[[info.m[k]]] = k;
+      }
+  }
 }
 
 Wire.prototype._onChoke = function () {
@@ -280,20 +319,17 @@ Wire.prototype._onUninterested = function () {
 }
 
 Wire.prototype._onHave = function (index) {
-  if (this.peerPieces[index]) {
+  if (this.peerPieces.get(index)) {
     return
   }
 
-  this.peerPieces[index] = true
+  this.peerPieces.set(index, true)
   this.emit('have', index)
 }
 
 Wire.prototype._onBitField = function (buffer) {
-  var pieces = new BitField(buffer)
-  for (var i = 0; i < 8 * buffer.length; i++) {
-    this.peerPieces[i] = pieces.get(i)
-  }
-  this.emit('bitfield', pieces)
+  this.peerPieces = new BitField(buffer)
+  this.emit('bitfield', this.peerPieces)
 }
 
 Wire.prototype._onRequest = function (index, offset, length) {
@@ -313,6 +349,7 @@ Wire.prototype._onRequest = function (index, offset, length) {
 Wire.prototype._onPiece = function (index, offset, buffer) {
   this._callback(pull(this.requests, index, offset, buffer.length), null, buffer)
   this.downloaded += buffer.length
+  this.downloadSpeed(buffer.length)
   this.emit('download', buffer.length)
   this.emit('piece', index, offset, buffer)
 }
@@ -327,7 +364,21 @@ Wire.prototype._onPort = function (port) {
 }
 
 Wire.prototype._onExtended = function (ext, buf) {
-  this.emit('extended', ext, buf)
+  var info;
+  if (ext === 0 &&
+      (info = bncode.decode(buf))) {
+
+      if (typeof info.m === 'object') {
+          this.peerExtensionMapping = info.m;
+      }
+
+      this.emit('extended', 'handshake', info);
+  } else {
+      if (this.extensionMapping.hasOwnProperty(ext))
+          ext = this.extensionMapping[ext];
+
+      this.emit('extended', ext, buf)
+  }
 }
 
 Wire.prototype._onTimeout = function () {
