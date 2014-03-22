@@ -60,6 +60,8 @@ Send and receive a handshake from the peer. This is the first message.
 wire.handshake(infoHash, peerId, { dht: true })
 wire.on('handshake', function (infoHash, peerId, extensions) {
 	// receive a handshake
+  console.log(extensions.dht) // supports DHT (BEP-0005)
+  console.log(extensions.extended) // supports extension protocol (BEP-0010)
 })
 ```
 
@@ -160,8 +162,7 @@ If the timeout is triggered the request callback is called with an error and a `
 
 ### dht and port
 
-You can set the extensions flag `dht` in the handshake to `true` if you participate in the torrent dht.
-Afterwards you can send your dht port.
+You can set the extensions flag `dht` in the handshake to `true` if you participate in the torrent dht. Afterwards you can send your dht port.
 
 ```js
 // send your port to the peer
@@ -169,6 +170,13 @@ wire.port(dhtPort)
 wire.on('port', function (dhtPort) {
 	// peer has sent a port to us
 })
+```
+
+You can check to see if the peer supports extensions.
+
+```js
+wire.peerExtensions.dht // supports DHT (bep_0005)
+wire.peerExtensions.extended // supports extended messages (bep_0005)
 ```
 
 ### keep-alive
@@ -185,11 +193,14 @@ wire.on('keep-alive', function () {
 
 ### transfer stats
 
-Check how many bytes you have uploaded and download
+Check how many bytes you have uploaded and download, and current speed
 
 ```js
 wire.uploaded // number of bytes uploaded
 wire.downloaded // number of bytes downloaded
+
+wire.uploadSpeed() // upload speed - bytes per second
+wire.downloadSpeed() // download speed - bytes per second
 
 wire.on('download', function (numberOfBytes) {
 	...
