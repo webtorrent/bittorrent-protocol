@@ -253,6 +253,10 @@ extended protocol handshake sent to the remote peer. Plugins can also hook event
 Here is an example of the **ut_metadata** plugin being used with **bittorrent-protocol**:
 
 ```js
+var Protocol = require('bittorrent-protocol')
+var net = require('net')
+var ut_metadata = require('ut_metadata')
+
 net.createServer(function (socket) {
   var wire = new Protocol()
   socket.pipe(wire).pipe(socket)
