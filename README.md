@@ -244,7 +244,7 @@ functionality with common protocol extensions like ut_metadata (magnet uris).
 Here are the **bittorrent-protocol** plugins that we know about:
 
 - [ut_metadata](https://github.com/feross/ut_metadata)
-- **Add yours here! Send a pull request!**
+- *Add yours here! Send a pull request!*
 
 In short, a plugin can register itself with at a certain name, which will be added to the
 extended protocol handshake sent to the remote peer. Plugins can also hook events like
