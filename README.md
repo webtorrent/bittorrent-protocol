@@ -1,16 +1,14 @@
-# bittorrent-protocol
-[![Build Status](http://img.shields.io/travis/feross/bittorrent-protocol.svg)](https://travis-ci.org/feross/bittorrent-protocol)
-[![NPM Version](http://img.shields.io/npm/v/bittorrent-protocol.svg)](https://npmjs.org/package/bittorrent-protocol)
-[![NPM](http://img.shields.io/npm/dm/bittorrent-protocol.svg)](https://npmjs.org/package/bittorrent-protocol)
-[![Gittip](http://img.shields.io/gittip/feross.svg)](https://www.gittip.com/feross/)
+# bittorrent-protocol [![build](http://img.shields.io/travis/feross/bittorrent-protocol.svg)](https://travis-ci.org/feross/bittorrent-protocol) [![npm](http://img.shields.io/npm/v/bittorrent-protocol.svg)](https://npmjs.org/package/bittorrent-protocol) [![gittip](http://img.shields.io/gittip/feross.svg)](https://www.gittip.com/feross/)
 
 ### Simple, robust, BitTorrent wire protocol implementation
 
 [![browser support](https://ci.testling.com/feross/bittorrent-protocol.png)](https://ci.testling.com/feross/bittorrent-protocol)
 
-Node.js implementation of the [BitTorrent peer wire protocol](https://wiki.theory.org/BitTorrentSpecification#Peer_wire_protocol_.28TCP.29). The protocol is the main communication layer for BitTorrent file transfer.
+Node.js implementation of the [BitTorrent peer wire protocol](https://wiki.theory.org/BitTorrentSpecification#Peer_wire_protocol_.28TCP.29).
+The protocol is the main communication layer for BitTorrent file transfer.
 
-Also works in the browser with [browserify](http://browserify.org/)! This module is used by [WebTorrent](http://webtorrent.io).
+Also works in the browser with [browserify](http://browserify.org/)! This module is used
+by [WebTorrent](http://webtorrent.io).
 
 ## install
 
@@ -20,7 +18,8 @@ npm install bittorrent-protocol
 
 ## usage
 
-The protocol is implemented as a **duplex stream**, so all you have to do is pipe to and from it.
+The protocol is implemented as a **duplex stream**, so all you have to do is pipe to and
+from it.
 
 duplex streams | a.pipe(b).pipe(a)
 ---- | ---
@@ -158,11 +157,13 @@ You can set a request timeout if you want to.
 wire.setTimeout(5000) // head request should take a most 5s to finish
 ```
 
-If the timeout is triggered the request callback is called with an error and a `timeout` event is emitted.
+If the timeout is triggered the request callback is called with an error and a `timeout`
+event is emitted.
 
 ### dht and port
 
-You can set the extensions flag `dht` in the handshake to `true` if you participate in the torrent dht. Afterwards you can send your dht port.
+You can set the extensions flag `dht` in the handshake to `true` if you participate in
+the torrent dht. Afterwards you can send your dht port.
 
 ```js
 // send your port to the peer
@@ -191,6 +192,30 @@ wire.on('keep-alive', function () {
 })
 ```
 
+### extension protocol (BEP 10)
+
+This module has built-in support for the
+[BitTorrent Extension Protocol (BEP 10)](http://www.bittorrent.org/beps/bep_0010.html).
+
+The intention of BEP 10 is to provide a simple and thin transport for extensions to the
+bittorrent protocol. Most extensions to the protocol use BEP 10 so they can add new
+features to the protocol without interfering with the standard bittorrent protocol or
+clients that don't support the new extension.
+
+An example of a BitTorrent extension that uses BEP 10 is
+[ut_metadata](http://www.bittorrent.org/beps/bep_0009.html) (BEP 9), the extension that
+allows magnet uris to work.
+
+```js
+wire.extended(code, buffer)
+```
+
+This package, **bittorrent-protocol**, also provides a plugin API to make it easy to
+integrate extensions that use the extension protocol (BEP 10) into this module. For
+example, to support ut_metadata (BEP 9), you need only install the
+[ut_metadata](https://github.com/feross/ut_metadata) npm module and call `wire.use()`.
+See the [Plugin API](#plugin-api) section for more information.
+
 ### transfer stats
 
 Check how many bytes you have uploaded and download, and current speed
@@ -203,12 +228,69 @@ wire.uploadSpeed() // upload speed - bytes per second
 wire.downloadSpeed() // download speed - bytes per second
 
 wire.on('download', function (numberOfBytes) {
-	...
+  ...
 })
 wire.on('upload', function (numberOfBytes) {
-	...
+  ...
 })
 ```
+
+
+## plugin api
+
+This package supports a simple plugin API so you can extend the default protocol
+functionality with common protocol extensions like ut_metadata (magnet uris).
+
+Here are the **bittorrent-protocol** plugins that we know about:
+
+- [ut_metadata](https://github.com/feross/ut_metadata)
+- **Add yours here! (Send a pull request!
+
+In short, a plugin can register itself with at a certain name, which will be added to the
+extended protocol handshake sent to the remote peer. Plugins can also hook events like
+'handshake' and 'extended'. To use a plugin, simply require it and call `wire.use()`.
+
+Here is an example of the **ut_metadata** plugin being used with **bittorrent-protocol**:
+
+```js
+net.createServer(function (socket) {
+  var wire = new Protocol()
+  socket.pipe(wire).pipe(socket)
+
+  // initialize the extension
+  wire.use(ut_metadata())
+
+  // all `ut_metadata` functionality can now be accessed at wire.ext('ut_metadata')
+
+  // ask the peer to send us metadata
+  wire.ext('ut_metadata').fetch()
+
+  // 'metadata' event will fire when the metadata arrives and is verified to be correct!
+  wire.ext('ut_metadata').on('metadata', function (metadata) {
+    // got metadata!
+
+    // Note: the event will not fire if the peer does not support ut_metadata, if they
+    // don't have metadata yet either, if they repeatedly send invalid data, or if they
+    // simply don't respond.
+  })
+
+  // optionally, listen to the 'warning' event if you want to know that metadata is
+  // probably not going to arrive for one of the above reasons.
+  wire.ext('ut_metadata').on('warning', function (err) {
+    console.log(err.message)
+  })
+
+  // handle handshake
+  wire.on('handshake', function (infoHash, peerId) {
+    wire.handshake(new Buffer('my info hash'), new Buffer('my peer id'))
+  })
+
+}).listen(6881)
+```
+
+If you want to write your own plugin, take a look at the
+[ut_metadata index.js file](https://github.com/feross/ut_metadata/blob/master/index.js)
+to see how it's done.
 
 ## license
 
