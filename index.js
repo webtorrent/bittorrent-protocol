@@ -2,10 +2,10 @@ module.exports = Wire
 
 var BitField = require('bitfield')
 var bncode = require('bncode')
-var inherits = require('inherits')
 var extend = require('extend.js')
-var stream = require('stream')
+var inherits = require('inherits')
 var speedometer = require('speedometer')
+var stream = require('stream')
 
 var MESSAGE_PROTOCOL     = new Buffer('\u0013BitTorrent protocol')
 var MESSAGE_KEEP_ALIVE   = new Buffer([0x00,0x00,0x00,0x00])
@@ -53,6 +53,11 @@ function Wire () {
    * @type {Object}
    */
   this.extendedHandshake = {}
+  this.peerExtendedHandshake = {}
+
+  /** @type {Object} string -> function, ex 'ut_metadata' -> ut_metadata() */
+  this._ext = {}
+  this._nextExt = 1
 
   this.uploaded = 0
   this.downloaded = 0
@@ -105,6 +110,46 @@ Wire.prototype.end = function () {
   this._onUninterested()
   this._onChoke()
   stream.Duplex.prototype.end.apply(this, arguments)
+}
+
+//
+// PROTOCOL EXTENSION API
+//
+
+Wire.prototype.use = function (Extension) {
+  if (!Extension.name) {
+    throw new Error('Extension API requires a named function, e.g. function name() {}')
+  }
+
+  var ext = this._nextExt
+  var handler = new Extension(this)
+
+  function noop () {}
+
+  if (typeof handler.onHandshake !== 'function') {
+    handler.onHandshake = noop
+  }
+  if (typeof handler.onExtendedHandshake !== 'function') {
+    handler.onExtendedHandshake = noop
+  }
+  if (typeof handler.onMessage !== 'function') {
+    handler.onMessage = noop
+  }
+
+  this.extendedMapping[ext] = Extension.name
+  this._ext[Extension.name] = handler
+
+  this._nextExt += 1
+}
+
+/**
+ * Return an extension's exported functions
+ * @param  {string} ext extension name
+ * @return {Object}
+ */
+Wire.prototype.ext = function (ext) {
+  var self = this
+  return this._ext[ext]
 }
 
 //
@@ -280,16 +325,19 @@ Wire.prototype._onKeepAlive = function () {
 Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
   this.peerId = peerId
   this.peerExtensions = extensions
+
+  for (var name in this._ext) {
+    this._ext[name].onHandshake(infoHash, peerId, extensions)
+  }
   this.emit('handshake', infoHash, peerId, extensions)
 
   /* Peer supports BEP-0010, send extended handshake.
    *
-   * Doing this after the 'handshake' event leaves users time to populate
-   * `this.extendedHandshake` and `this.extendedMapping` which together form the message
-   * that the remote wire will receive.
+   * This comes after the 'handshake' event to give the user a chance to populate
+   * `this.extendedHandshake` and `this.extendedMapping` before the extended handshake
+   * is sent to the remote peer.
    */
   if (extensions.extended) {
-
     // Create extended message object from registered extensions
     var msg = extend({}, this.extendedHandshake)
     msg.m = {}
@@ -371,15 +419,27 @@ Wire.prototype._onPort = function (port) {
 }
 
 Wire.prototype._onExtended = function (ext, buf) {
-  var info
+  var info, name
   if (ext === 0 && (info = bncode.decode(buf))) {
+    this.peerExtendedHandshake = info
     if (typeof info.m === 'object') {
-      this.peerExtendedMapping = info.m
+      for (name in info.m) {
+        this.peerExtendedMapping[name] = Number(info.m[name].toString())
+      }
     }
-    this.emit('extended', 'handshake', info)
+    for (name in this._ext) {
+      if (this.peerExtendedMapping[name]) {
+        this._ext[name].onExtendedHandshake(this.peerExtendedHandshake)
+      }
+    }
+    this.emit('extended', 'handshake', this.peerExtendedHandshake)
   } else {
     if (this.extendedMapping[ext]) {
-      ext = this.extendedMapping[ext]
+      ext = this.extendedMapping[ext] // friendly name for extension
+      if (this._ext[ext]) {
+        // there is an registered extension handler, so call it
+        this._ext[ext].onMessage(buf)
+      }
     }
     this.emit('extended', ext, buf)
   }
