@@ -243,7 +243,7 @@ functionality with common protocol extensions like ut_metadata (magnet uris).
 
 Here are the **bittorrent-protocol** plugins that we know about:
 
-- [ut_metadata](https://github.com/feross/ut_metadata)
+- [ut_metadata](https://github.com/feross/ut_metadata) - Extension for Peers to Send Metadata Files (BEP 9)
 - *Add yours here! Send a pull request!*
 
 In short, a plugin can register itself with at a certain name, which will be added to the
