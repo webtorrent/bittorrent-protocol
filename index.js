@@ -138,18 +138,9 @@ Wire.prototype.use = function (Extension) {
 
   this.extendedMapping[ext] = Extension.name
   this._ext[Extension.name] = handler
+  this[Extension.name] = handler
 
   this._nextExt += 1
-}
-
-/**
- * Return an extension's exported functions
- * @param  {string} ext extension name
- * @return {Object}
- */
-Wire.prototype.ext = function (ext) {
-  var self = this
-  return this._ext[ext]
 }
 
 //

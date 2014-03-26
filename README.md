@@ -266,13 +266,13 @@ net.createServer(function (socket) {
   // initialize the extension
   wire.use(ut_metadata())
 
-  // all `ut_metadata` functionality can now be accessed at wire.ext('ut_metadata')
+  // all `ut_metadata` functionality can now be accessed at wire.ut_metadata
 
   // ask the peer to send us metadata
-  wire.ext('ut_metadata').fetch()
+  wire.ut_metadata.fetch()
 
   // 'metadata' event will fire when the metadata arrives and is verified to be correct!
-  wire.ext('ut_metadata').on('metadata', function (metadata) {
+  wire.ut_metadata.on('metadata', function (metadata) {
     // got metadata!
 
     // Note: the event will not fire if the peer does not support ut_metadata, if they
@@ -282,7 +282,7 @@ net.createServer(function (socket) {
 
   // optionally, listen to the 'warning' event if you want to know that metadata is
   // probably not going to arrive for one of the above reasons.
-  wire.ext('ut_metadata').on('warning', function (err) {
+  wire.ut_metadata.on('warning', function (err) {
     console.log(err.message)
   })
 
