@@ -210,11 +210,11 @@ allows magnet uris to work.
 wire.extended(code, buffer)
 ```
 
-This package, **bittorrent-protocol**, also provides a plugin API to make it easy to
-integrate extensions that use the extension protocol (BEP 10) into this module. For
-example, to support ut_metadata (BEP 9), you need only install the
+This package, **bittorrent-protocol**, also provides an extension API to make it easy to
+add extensions to this module using the "extension protocol" (BEP 10). For example, to
+support ut_metadata (BEP 9), you need only install the
 [ut_metadata](https://github.com/feross/ut_metadata) npm module and call `wire.use()`.
-See the [Plugin API](#plugin-api) section for more information.
+See the [Extension API](#extension-api) section for more information.
 
 ### transfer stats
 
@@ -236,21 +236,23 @@ wire.on('upload', function (numberOfBytes) {
 ```
 
 
-## plugin api
+## extension api
 
-This package supports a simple plugin API so you can extend the default protocol
+This package supports a simple extension API so you can extend the default protocol
 functionality with common protocol extensions like ut_metadata (magnet uris).
 
-Here are the **bittorrent-protocol** plugins that we know about:
+Here are the **bittorrent-protocol** extensions that we know about:
 
 - [ut_metadata](https://github.com/feross/ut_metadata) - Extension for Peers to Send Metadata Files (BEP 9)
 - *Add yours here! Send a pull request!*
 
-In short, a plugin can register itself with at a certain name, which will be added to the
-extended protocol handshake sent to the remote peer. Plugins can also hook events like
-'handshake' and 'extended'. To use a plugin, simply require it and call `wire.use()`.
+In short, an extension can register itself with at a certain name, which will be added to
+the extended protocol handshake sent to the remote peer. Extensions can also hook events
+like 'handshake' and 'extended'. To use an extension, simply require it and call
+`wire.use()`.
 
-Here is an example of the **ut_metadata** plugin being used with **bittorrent-protocol**:
+Here is an example of the **ut_metadata** extension being used with
+**bittorrent-protocol**:
 
 ```js
 var Protocol = require('bittorrent-protocol')
@@ -292,7 +294,7 @@ net.createServer(function (socket) {
 }).listen(6881)
 ```
 
-If you want to write your own plugin, take a look at the
+If you want to write your own extension, take a look at the
 [ut_metadata index.js file](https://github.com/feross/ut_metadata/blob/master/index.js)
 to see how it's done.
 
