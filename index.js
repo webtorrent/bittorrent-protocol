@@ -411,7 +411,7 @@ Wire.prototype._onPort = function (port) {
 
 Wire.prototype._onExtended = function (ext, buf) {
   var info, name
-  if (ext === 0 && (info = bncode.decode(buf))) {
+  if (ext === 0 && (info = safeBdecode(buf))) {
     this.peerExtendedHandshake = info
     if (typeof info.m === 'object') {
       for (name in info.m) {
@@ -623,4 +623,12 @@ function pull (requests, piece, offset, length) {
     return req
   }
   return null
+}
+
+function safeBdecode (buf) {
+  try {
+    return bncode.decode(buf);
+  } catch (e) {
+    console.warn(e);
+  }
 }
