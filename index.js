@@ -334,7 +334,7 @@ Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
     msg.m = {}
     for (var ext in this.extendedMapping) {
       var name = this.extendedMapping[ext]
-      msg.m[name] = ext
+      msg.m[name] = Number(ext)
     }
 
     // Send extended handshake
