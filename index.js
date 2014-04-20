@@ -7,6 +7,8 @@ var inherits = require('inherits')
 var speedometer = require('speedometer')
 var stream = require('stream')
 
+var BITFIELD_GROW = 400000
+
 var MESSAGE_PROTOCOL     = new Buffer('\u0013BitTorrent protocol')
 var MESSAGE_KEEP_ALIVE   = new Buffer([0x00,0x00,0x00,0x00])
 var MESSAGE_CHOKE        = new Buffer([0x00,0x00,0x00,0x01,0x00])
@@ -36,7 +38,11 @@ function Wire () {
   this.peerChoking = true // is the peer choking us?
   this.peerInterested = false // is the peer interested in us?
 
-  this.peerPieces = new BitField(0)
+  // The largest torrent that I know of (the Geocities archive) is ~641 GB and has
+  // ~41,000 pieces. Therefore, cap bitfield to 10x larger (400,000 bits) to support all
+  // possible torrents but prevent malicious peers from growing bitfield to fill memory.
+  this.peerPieces = new BitField(0, { grow: BITFIELD_GROW })
+
   this.peerExtensions = {}
 
   this.requests = []

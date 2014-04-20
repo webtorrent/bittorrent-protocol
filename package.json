@@ -11,14 +11,14 @@
     "url": "https://github.com/feross/bittorrent-protocol/issues"
   },
   "dependencies": {
-    "bitfield": "^0.2.0",
-    "bncode": "^0.5.0",
+    "bitfield": "^1.0.1",
+    "bncode": "^0.5.3",
     "inherits": "^2.0.1",
     "speedometer": "^0.1.2",
-    "extend.js": "0.0.1"
+    "extend.js": "^0.0.1"
   },
   "devDependencies": {
-    "tape": "2.x"
+    "tape": "^2.12.3"
   },
   "homepage": "http://webtorrent.io",
   "keywords": [
