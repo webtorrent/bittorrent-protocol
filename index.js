@@ -323,10 +323,10 @@ Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
   this.peerId = peerId
   this.peerExtensions = extensions
 
+  this.emit('handshake', infoHash, peerId, extensions)
   for (var name in this._ext) {
     this._ext[name].onHandshake(infoHash, peerId, extensions)
   }
-  this.emit('handshake', infoHash, peerId, extensions)
 
   /* Peer supports BEP-0010, send extended handshake.
    *
