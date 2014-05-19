@@ -388,8 +388,8 @@ Wire.prototype._onRequest = function (index, offset, length) {
   if (this.amChoking) return
 
   var respond = function (err, buffer) {
-    if (err || request !== pull(this.peerRequests, index, offset, length))
-      return
+    if (request !== pull(this.peerRequests, index, offset, length)) return
+    if (err) return
     this.piece(index, offset, buffer)
   }.bind(this)
 
