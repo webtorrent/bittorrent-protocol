@@ -244,6 +244,7 @@ functionality with common protocol extensions like ut_metadata (magnet uris).
 Here are the **bittorrent-protocol** extensions that we know about:
 
 - [ut_metadata](https://github.com/feross/ut_metadata) - Extension for Peers to Send Metadata Files (BEP 9)
+- [ut_pex](https://github.com/fisch0920/ut_pex) - Extension for Peer Discovery (PEX)
 - *Add yours here! Send a pull request!*
 
 In short, an extension can register itself with at a certain name, which will be added to
