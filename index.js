@@ -123,7 +123,8 @@ Wire.prototype.end = function () {
 //
 
 Wire.prototype.use = function (Extension) {
-  if (!Extension.name) {
+  var name = Extension.name || Extension.prototype.name
+  if (!name) {
     throw new Error('Extension API requires a named function, e.g. function name() {}')
   }
 
@@ -142,9 +143,9 @@ Wire.prototype.use = function (Extension) {
     handler.onMessage = noop
   }
 
-  this.extendedMapping[ext] = Extension.name
-  this._ext[Extension.name] = handler
-  this[Extension.name] = handler
+  this.extendedMapping[ext] = name
+  this._ext[name] = handler
+  this[name] = handler
 
   this._nextExt += 1
 }
