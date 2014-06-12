@@ -11,11 +11,11 @@
     "url": "https://github.com/feross/bittorrent-protocol/issues"
   },
   "dependencies": {
+    "bencode": "^0.6.0",
     "bitfield": "^1.0.1",
-    "bncode": "^0.5.3",
+    "extend.js": "^0.0.1",
     "inherits": "^2.0.1",
-    "speedometer": "^0.1.2",
-    "extend.js": "^0.0.1"
+    "speedometer": "^0.1.2"
   },
   "devDependencies": {
     "tape": "^2.12.3"

@@ -1,7 +1,7 @@
 module.exports = Wire
 
 var BitField = require('bitfield')
-var bncode = require('bncode')
+var bencode = require('bencode')
 var extend = require('extend.js')
 var inherits = require('inherits')
 var speedometer = require('speedometer')
@@ -304,7 +304,7 @@ Wire.prototype.extended = function (ext, obj) {
   }
   if (typeof ext === 'number') {
     var ext_id = new Buffer([ext])
-    var buf = Buffer.isBuffer(obj) ? obj : bncode.encode(obj)
+    var buf = Buffer.isBuffer(obj) ? obj : bencode.encode(obj)
 
     this._message(20, [], Buffer.concat([ext_id, buf]))
   } else {
@@ -345,7 +345,7 @@ Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
     }
 
     // Send extended handshake
-    this.extended(0, bncode.encode(msg))
+    this.extended(0, bencode.encode(msg))
   }
 }
 
@@ -634,7 +634,7 @@ function pull (requests, piece, offset, length) {
 
 function safeBdecode (buf) {
   try {
-    return bncode.decode(buf);
+    return bencode.decode(buf);
   } catch (e) {
     console.warn(e);
   }
