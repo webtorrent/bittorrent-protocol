@@ -323,9 +323,10 @@ Wire.prototype._onKeepAlive = function () {
 Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
   this.peerId = peerId
   this.peerExtensions = extensions
-
   this.emit('handshake', infoHash, peerId, extensions)
-  for (var name in this._ext) {
+
+  var name
+  for (name in this._ext) {
     this._ext[name].onHandshake(infoHash, peerId, extensions)
   }
 
@@ -340,7 +341,7 @@ Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
     var msg = extend({}, this.extendedHandshake)
     msg.m = {}
     for (var ext in this.extendedMapping) {
-      var name = this.extendedMapping[ext]
+      name = this.extendedMapping[ext]
       msg.m[name] = Number(ext)
     }
 
