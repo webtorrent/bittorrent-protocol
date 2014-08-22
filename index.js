@@ -2,6 +2,7 @@ module.exports = Wire
 
 var BitField = require('bitfield')
 var bencode = require('bencode')
+var debug = require('debug')('bittorrent-protocol')
 var extend = require('extend.js')
 var inherits = require('inherits')
 var speedometer = require('speedometer')
@@ -31,6 +32,7 @@ inherits(Wire, stream.Duplex)
 function Wire () {
   if (!(this instanceof Wire)) return new Wire()
   stream.Duplex.call(this)
+  debug('new wire')
 
   this.amChoking = true // are we choking the peer?
   this.amInterested = false // are we interested in the peer?
@@ -592,7 +594,7 @@ Wire.prototype._parseHandshake = function () {
     this._parse(pstrlen + 48, function (handshake) {
       var protocol = handshake.slice(0, pstrlen)
       if (protocol.toString() !== 'BitTorrent protocol') {
-        console.error('Wire not speaking BitTorrent protocol: ', protocol.toString())
+        debug('Error: wire not speaking BitTorrent protocol (%s)', protocol.toString())
         this.end()
         return
       }
