@@ -13,7 +13,7 @@
   "dependencies": {
     "bencode": "^0.6.0",
     "bitfield": "^1.0.1",
-    "debug": "^1.0.4",
+    "debug": "^2.0.0",
     "extend.js": "^0.0.1",
     "inherits": "^2.0.1",
     "speedometer": "^0.1.2"
