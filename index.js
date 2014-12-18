@@ -125,7 +125,7 @@ Wire.prototype.end = function () {
 //
 
 Wire.prototype.use = function (Extension) {
-  var name = Extension.name || Extension.prototype.name
+  var name = Extension.prototype.name
   if (!name) {
     throw new Error('Extension API requires a named function, e.g. function name() {}')
   }
