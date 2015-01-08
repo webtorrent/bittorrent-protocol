@@ -1,8 +1,12 @@
-# bittorrent-protocol [![build](https://img.shields.io/travis/feross/bittorrent-protocol.svg)](https://travis-ci.org/feross/bittorrent-protocol) [![npm](https://img.shields.io/npm/v/bittorrent-protocol.svg)](https://npmjs.org/package/bittorrent-protocol) [![gittip](https://img.shields.io/gittip/feross.svg)](https://www.gittip.com/feross/)
+# bittorrent-protocol
+[![build](https://img.shields.io/travis/feross/bittorrent-protocol.svg?style=flat)](https://travis-ci.org/feross/bittorrent-protocol)
+[![npm](https://img.shields.io/npm/v/bittorrent-protocol.svg?style=flat)](https://npmjs.org/package/bittorrent-protocol)
+[![downloads](https://img.shields.io/npm/dm/bittorrent-protocol.svg?style=flat)](https://npmjs.org/package/bittorrent-protocol)
+[![gittip](https://img.shields.io/gittip/feross.svg?style=flat)](https://www.gittip.com/feross/)
 
 ### Simple, robust, BitTorrent wire protocol implementation
 
-[![browser support](https://ci.testling.com/feross/bittorrent-protocol.png)](https://ci.testling.com/feross/bittorrent-protocol)
+[![Sauce Test Status](https://saucelabs.com/browser-matrix/bittorrent-protocol.svg)](https://saucelabs.com/u/bittorrent-protocol)
 
 Node.js implementation of the [BitTorrent peer wire protocol](https://wiki.theory.org/BitTorrentSpecification#Peer_wire_protocol_.28TCP.29).
 The protocol is the main communication layer for BitTorrent file transfer.

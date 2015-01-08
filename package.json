@@ -19,7 +19,8 @@
     "speedometer": "^0.1.2"
   },
   "devDependencies": {
-    "tape": "^3.0.3"
+    "tape": "^3.0.3",
+    "zuul": "^1.16.3"
   },
   "homepage": "http://webtorrent.io",
   "keywords": [
@@ -39,16 +40,12 @@
     "url": "git://github.com/feross/bittorrent-protocol.git"
   },
   "scripts": {
-    "test": "tape test/*.js"
+    "test": "npm run test-node && npm run test-browser",
+    "test-browser": "zuul -- test/*.js",
+    "test-browser-local": "zuul --local -- test/*.js",
+    "test-node": "tape test/*.js"
   },
   "testling": {
-    "files": "test/*.js",
-    "browsers": [
-      "ie/9..latest",
-      "chrome/25..latest",
-      "firefox/20..latest",
-      "safari/6..latest",
-      "opera/15.0..latest"
-    ]
+    "files": "test/*.js"
   }
 }
