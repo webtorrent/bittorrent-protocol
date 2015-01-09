@@ -6,7 +6,7 @@ test('Timeout when peer does not respond', function (t) {
 
   var timeouts = 0
 
-  var wire = Protocol()
+  var wire = new Protocol()
   wire.pipe(wire)
   wire.setTimeout(1000)
   wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
@@ -30,7 +30,7 @@ test('Timeout when peer does not respond', function (t) {
     })
   })
 
-  wire.on('timeout', function() {
+  wire.on('timeout', function () {
     t.ok(++timeouts <= 3) // should get called 3 times
   })
 

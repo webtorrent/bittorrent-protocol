@@ -88,7 +88,7 @@ test('Request a piece', function (t) {
     callback(null, new Buffer('hello world'))
   })
 
-  wire.once('unchoke', function() {
+  wire.once('unchoke', function () {
     t.equal(wire.requests.length, 0)
     wire.request(0, 1, 11, function (err, buffer) {
       t.equal(wire.requests.length, 0)
@@ -110,7 +110,7 @@ test('No duplicate `have` events for same piece', function (t) {
   wire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
 
   var haveEvents = 0
-  wire.on('have', function (index) {
+  wire.on('have', function () {
     haveEvents += 1
   })
   t.equal(haveEvents, 0)

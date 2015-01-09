@@ -4,7 +4,7 @@ var test = require('tape')
 test('No timeout when peer is good', function (t) {
   t.plan(6)
 
-  var wire = Protocol()
+  var wire = new Protocol()
   wire.pipe(wire)
   wire.setTimeout(1000)
   wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
@@ -33,7 +33,7 @@ test('No timeout when peer is good', function (t) {
   })
 
   // there should never be a timeout
-  wire.on('timeout', function() {
+  wire.on('timeout', function () {
     t.fail('Timed out')
   })
 
