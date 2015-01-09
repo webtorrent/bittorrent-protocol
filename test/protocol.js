@@ -116,11 +116,11 @@ test('No duplicate `have` events for same piece', function (t) {
   t.equal(haveEvents, 0)
   t.equal(!!wire.peerPieces.get(0), false)
   wire.have(0)
-  setTimeout(function () {
+  process.nextTick(function () {
     t.equal(haveEvents, 1, 'emitted event for new piece')
     t.equal(!!wire.peerPieces.get(0), true)
     wire.have(0)
-    setTimeout(function () {
+    process.nextTick(function () {
       t.equal(haveEvents, 1, 'not emitted event for preexisting piece')
       t.equal(!!wire.peerPieces.get(0), true)
     })
