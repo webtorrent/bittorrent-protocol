@@ -310,7 +310,7 @@ Wire.prototype.extended = function (ext, obj) {
 
     this._message(20, [], Buffer.concat([ext_id, buf]))
   } else {
-    console.warn('Skipping extension', ext)
+    throw new Error('Unrecognized extension: ' + ext)
   }
 }
 
