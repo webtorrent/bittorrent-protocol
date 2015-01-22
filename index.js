@@ -47,7 +47,9 @@ function Wire () {
 
   this.peerExtensions = {}
 
+  // outgoing
   this.requests = []
+  // incoming
   this.peerRequests = []
 
   /** @type {Object} number -> string, ex: 1 -> 'ut_metadata' */
