@@ -189,7 +189,7 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
 Wire.prototype.choke = function () {
   if (this.amChoking) return
   this.amChoking = true
-  this.peerRequests.slice(0, this.peerRequests.length)
+  this.peerRequests.splice(0, this.peerRequests.length)
   this._push(MESSAGE_CHOKE)
 }
 
