@@ -47,7 +47,9 @@ function Wire () {
 
   this.peerExtensions = {}
 
+  // outgoing
   this.requests = []
+  // incoming
   this.peerRequests = []
 
   /** @type {Object} number -> string, ex: 1 -> 'ut_metadata' */
@@ -187,7 +189,7 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
 Wire.prototype.choke = function () {
   if (this.amChoking) return
   this.amChoking = true
-  while (this.peerRequests.length) this.peerRequests.pop()
+  this.peerRequests.splice(0, this.peerRequests.length)
   this._push(MESSAGE_CHOKE)
 }
 
