@@ -3,7 +3,7 @@ module.exports = Wire
 var BitField = require('bitfield')
 var bencode = require('bencode')
 var debug = require('debug')('bittorrent-protocol')
-var extend = require('extend.js')
+var extend = require('xtend')
 var inherits = require('inherits')
 var speedometer = require('speedometer')
 var stream = require('stream')
@@ -342,7 +342,7 @@ Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
    */
   if (extensions.extended) {
     // Create extended message object from registered extensions
-    var msg = extend({}, this.extendedHandshake)
+    var msg = extend(this.extendedHandshake)
     msg.m = {}
     for (var ext in this.extendedMapping) {
       name = this.extendedMapping[ext]
