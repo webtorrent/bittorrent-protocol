@@ -19,6 +19,7 @@
     "xtend": "^4.0.0"
   },
   "devDependencies": {
+    "standard": "^2.3.1",
     "tape": "^3.0.3",
     "zuul": "^1.16.3"
   },
@@ -40,7 +41,7 @@
     "url": "git://github.com/feross/bittorrent-protocol.git"
   },
   "scripts": {
-    "test": "npm run test-node && npm run test-browser",
+    "test": "standard && npm run test-node && npm run test-browser",
     "test-browser": "zuul -- test/*.js",
     "test-browser-local": "zuul --local -- test/*.js",
     "test-node": "tape test/*.js"

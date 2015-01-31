@@ -41,4 +41,3 @@ test('State changes correctly on wire \'end\'', function (t) {
 
   wire.unchoke()
 })
-

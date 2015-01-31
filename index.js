@@ -10,15 +10,15 @@ var stream = require('stream')
 
 var BITFIELD_GROW = 400000
 
-var MESSAGE_PROTOCOL     = new Buffer('\u0013BitTorrent protocol')
-var MESSAGE_KEEP_ALIVE   = new Buffer([0x00,0x00,0x00,0x00])
-var MESSAGE_CHOKE        = new Buffer([0x00,0x00,0x00,0x01,0x00])
-var MESSAGE_UNCHOKE      = new Buffer([0x00,0x00,0x00,0x01,0x01])
-var MESSAGE_INTERESTED   = new Buffer([0x00,0x00,0x00,0x01,0x02])
-var MESSAGE_UNINTERESTED = new Buffer([0x00,0x00,0x00,0x01,0x03])
+var MESSAGE_PROTOCOL = new Buffer('\u0013BitTorrent protocol')
+var MESSAGE_KEEP_ALIVE = new Buffer([0x00, 0x00, 0x00, 0x00])
+var MESSAGE_CHOKE = new Buffer([0x00, 0x00, 0x00, 0x01, 0x00])
+var MESSAGE_UNCHOKE = new Buffer([0x00, 0x00, 0x00, 0x01, 0x01])
+var MESSAGE_INTERESTED = new Buffer([0x00, 0x00, 0x00, 0x01, 0x02])
+var MESSAGE_UNINTERESTED = new Buffer([0x00, 0x00, 0x00, 0x01, 0x03])
 
-var MESSAGE_RESERVED     = [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00]
-var MESSAGE_PORT         = [0x00,0x00,0x00,0x03,0x09,0x00,0x00]
+var MESSAGE_RESERVED = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+var MESSAGE_PORT = [0x00, 0x00, 0x00, 0x03, 0x09, 0x00, 0x00]
 
 function Request (piece, offset, length, callback) {
   this.piece = piece
@@ -497,11 +497,6 @@ Wire.prototype._write = function (data, encoding, cb) {
  */
 Wire.prototype._read = function () {}
 
-
-//
-// HELPER METHODS
-//
-
 Wire.prototype._callback = function (request, err, buffer) {
   if (!request)
     return
@@ -586,8 +581,9 @@ Wire.prototype._onmessage = function (buffer) {
       return this._onPort(buffer.readUInt16BE(1))
     case 20:
       return this._onExtended(buffer.readUInt8(1), buffer.slice(2))
+    default:
+      return this.emit('unknownmessage', buffer)
   }
-  this.emit('unknownmessage', buffer)
 }
 
 Wire.prototype._parseHandshake = function () {
@@ -639,8 +635,8 @@ function pull (requests, piece, offset, length) {
 
 function safeBdecode (buf) {
   try {
-    return bencode.decode(buf);
+    return bencode.decode(buf)
   } catch (e) {
-    console.warn(e);
+    console.warn(e)
   }
 }
