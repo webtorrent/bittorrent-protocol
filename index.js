@@ -181,6 +181,32 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
     reserved[7] |= 1
 
   this._push(Buffer.concat([MESSAGE_PROTOCOL, reserved, infoHash, peerId]))
+  this._handshakeSent = true
+
+  if (this.peerExtensions.extended) {
+    // Peer's handshake indicated support already
+    // (incoming connection)
+    this.sendExtendedHandshake()
+  }
+}
+
+/* Peer supports BEP-0010, send extended handshake.
+ *
+ * This comes after the 'handshake' event to give the user a chance to populate
+ * `this.extendedHandshake` and `this.extendedMapping` before the extended handshake
+ * is sent to the remote peer.
+ */
+Wire.prototype.sendExtendedHandshake = function () {
+  // Create extended message object from registered extensions
+  var msg = extend(this.extendedHandshake)
+  msg.m = {}
+  for (var ext in this.extendedMapping) {
+    var name = this.extendedMapping[ext]
+    msg.m[name] = Number(ext)
+  }
+
+  // Send extended handshake
+  this.extended(0, bencode.encode(msg))
 }
 
 /**
@@ -334,23 +360,9 @@ Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
     this._ext[name].onHandshake(infoHash, peerId, extensions)
   }
 
-  /* Peer supports BEP-0010, send extended handshake.
-   *
-   * This comes after the 'handshake' event to give the user a chance to populate
-   * `this.extendedHandshake` and `this.extendedMapping` before the extended handshake
-   * is sent to the remote peer.
-   */
-  if (extensions.extended) {
-    // Create extended message object from registered extensions
-    var msg = extend(this.extendedHandshake)
-    msg.m = {}
-    for (var ext in this.extendedMapping) {
-      name = this.extendedMapping[ext]
-      msg.m[name] = Number(ext)
-    }
-
-    // Send extended handshake
-    this.extended(0, bencode.encode(msg))
+  if (extensions.extended && this._handshakeSent) {
+    // outgoing connection
+    this.sendExtendedHandshake()
   }
 }
 
