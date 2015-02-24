@@ -1,7 +1,11 @@
-# bittorrent-protocol [![travis][travis-image]][travis-url] [![npm][npm-image]][npm-url] [![downloads][downloads-image]][downloads-url]
+# bittorrent-protocol
+
+[![travis][travis-image]][travis-url] [![Inline docs][inch-image]][inch-url] [![npm][npm-image]][npm-url] [![downloads][downloads-image]][downloads-url]
 
 [travis-image]: https://img.shields.io/travis/feross/bittorrent-protocol.svg?style=flat
 [travis-url]: https://travis-ci.org/feross/bittorrent-protocol
+[inch-image]: https://inch-ci.org/github/feross/bittorrent-protocol.svg?style=flat
+[inch-url]: https://inch-ci.org/github/feross/bittorrent-protocol
 [npm-image]: https://img.shields.io/npm/v/bittorrent-protocol.svg?style=flat
 [npm-url]: https://npmjs.org/package/bittorrent-protocol
 [downloads-image]: https://img.shields.io/npm/dm/bittorrent-protocol.svg?style=flat
