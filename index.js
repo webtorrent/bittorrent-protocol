@@ -165,20 +165,18 @@ Wire.prototype.use = function (Extension) {
  * @param  {Object} extensions
  */
 Wire.prototype.handshake = function (infoHash, peerId, extensions) {
-  if (typeof infoHash === 'string')
-    infoHash = new Buffer(infoHash, 'hex')
-  if (typeof peerId === 'string')
-    peerId = new Buffer(peerId, 'hex')
-  if (infoHash.length !== 20 || peerId.length !== 20)
+  if (typeof infoHash === 'string') infoHash = new Buffer(infoHash, 'hex')
+  if (typeof peerId === 'string') peerId = new Buffer(peerId, 'hex')
+  if (infoHash.length !== 20 || peerId.length !== 20) {
     throw new Error('infoHash and peerId MUST have length 20')
+  }
 
   var reserved = new Buffer(MESSAGE_RESERVED)
 
   // enable extended message
   reserved[5] |= 0x10
 
-  if (extensions && extensions.dht)
-    reserved[7] |= 1
+  if (extensions && extensions.dht) reserved[7] |= 1
 
   this._push(Buffer.concat([MESSAGE_PROTOCOL, reserved, infoHash, peerId]))
 }
@@ -233,9 +231,7 @@ Wire.prototype.have = function (index) {
  * @param  {BitField|Buffer} bitfield
  */
 Wire.prototype.bitfield = function (bitfield) {
-  if (!Buffer.isBuffer(bitfield))
-    bitfield = bitfield.buffer
-
+  if (!Buffer.isBuffer(bitfield)) bitfield = bitfield.buffer
   this._message(5, [], bitfield)
 }
 
@@ -249,10 +245,8 @@ Wire.prototype.bitfield = function (bitfield) {
 Wire.prototype.request = function (index, offset, length, cb) {
   if (!cb) cb = function () {}
 
-  if (this._finished)
-    return cb(new Error('wire is closed'))
-  if (this.peerChoking)
-    return cb(new Error('peer is choking'))
+  if (this._finished) return cb(new Error('wire is closed'))
+  if (this.peerChoking) return cb(new Error('peer is choking'))
 
   this.requests.push(new Request(index, offset, length, cb))
   this._updateTimeout()
@@ -357,8 +351,9 @@ Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
 Wire.prototype._onChoke = function () {
   this.peerChoking = true
   this.emit('choke')
-  while (this.requests.length)
+  while (this.requests.length) {
     this._callback(this.requests.shift(), new Error('peer is choking'), null)
+  }
 }
 
 Wire.prototype._onUnchoke = function () {
@@ -377,9 +372,7 @@ Wire.prototype._onUninterested = function () {
 }
 
 Wire.prototype._onHave = function (index) {
-  if (this.peerPieces.get(index)) {
-    return
-  }
+  if (this.peerPieces.get(index)) return
 
   this.peerPieces.set(index, true)
   this.emit('have', index)
@@ -498,27 +491,23 @@ Wire.prototype._write = function (data, encoding, cb) {
 Wire.prototype._read = function () {}
 
 Wire.prototype._callback = function (request, err, buffer) {
-  if (!request)
-    return
+  if (!request) return
 
   this._clearTimeout()
 
-  if (!this.peerChoking && !this._finished)
-    this._updateTimeout()
+  if (!this.peerChoking && !this._finished) this._updateTimeout()
   request.callback(err, buffer)
 }
 
 Wire.prototype._clearTimeout = function () {
-  if (!this._timeout)
-    return
+  if (!this._timeout) return
 
   clearTimeout(this._timeout)
   this._timeout = null
 }
 
 Wire.prototype._updateTimeout = function () {
-  if (!this._timeoutMs || !this.requests.length || this._timeout)
-    return
+  if (!this._timeoutMs || !this.requests.length || this._timeout) return
 
   this._timeout = setTimeout(this._onTimeout.bind(this), this._timeoutMs)
 }
@@ -539,8 +528,7 @@ Wire.prototype._message = function (id, numbers, data) {
   }
 
   this._push(buffer)
-  if (data)
-    this._push(data)
+  if (data) this._push(data)
 }
 
 Wire.prototype._onmessagelength = function (buffer) {
@@ -615,19 +603,19 @@ Wire.prototype._onfinish = function () {
   clearInterval(this._keepAlive)
   this._parse(Number.MAX_VALUE, function () {})
   this.peerRequests = []
-  while (this.requests.length)
+  while (this.requests.length) {
     this._callback(this.requests.shift(), new Error('wire was closed'), null)
+  }
 }
 
 function pull (requests, piece, offset, length) {
   for (var i = 0; i < requests.length; i++) {
     var req = requests[i]
-    if (req.piece !== piece || req.offset !== offset || req.length !== length)
-      continue
-    if (i === 0)
-      requests.shift()
-    else
-      requests.splice(i, 1)
+    if (req.piece !== piece || req.offset !== offset || req.length !== length) continue
+
+    if (i === 0) requests.shift()
+    else requests.splice(i, 1)
+
     return req
   }
   return null
