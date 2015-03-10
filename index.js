@@ -186,7 +186,7 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
   if (this.peerExtensions.extended) {
     // Peer's handshake indicated support already
     // (incoming connection)
-    this.sendExtendedHandshake()
+    this._sendExtendedHandshake()
   }
 }
 
@@ -196,7 +196,7 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
  * `this.extendedHandshake` and `this.extendedMapping` before the extended handshake
  * is sent to the remote peer.
  */
-Wire.prototype.sendExtendedHandshake = function () {
+Wire.prototype._sendExtendedHandshake = function () {
   // Create extended message object from registered extensions
   var msg = extend(this.extendedHandshake)
   msg.m = {}
@@ -362,7 +362,7 @@ Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
 
   if (extensions.extended && this._handshakeSent) {
     // outgoing connection
-    this.sendExtendedHandshake()
+    this._sendExtendedHandshake()
   }
 }
 
