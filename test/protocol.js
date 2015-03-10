@@ -33,6 +33,51 @@ test('Handshake (with string args)', function (t) {
   wire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
 })
 
+test('Asynchronous handshake + extended handshake', function (t) {
+  var eventLog = []
+
+  var wire1 = new Protocol()  // outgoing
+  var wire2 = new Protocol()  // incoming
+  wire1.pipe(wire2).pipe(wire1)
+
+  wire1.on('handshake', function (infoHash, peerId, extensions) {
+    eventLog.push('w1 hs')
+    t.equal(infoHash.toString(), '01234567890123456789')
+    t.equal(peerId.toString(), '12345678901234567890')
+    t.equal(extensions.extended, true)
+  })
+  wire1.on('extended', function (ext, obj) {
+    if (ext === 'handshake') {
+      eventLog.push('w1 ex')
+      t.ok(obj)
+
+      // Last step: ensure handshakes came before extension protocol
+      t.deepEqual(eventLog, ['w2 hs', 'w1 hs', 'w2 ex', 'w1 ex'])
+      t.end()
+    }
+  })
+
+  wire2.on('handshake', function (infoHash, peerId, extensions) {
+    eventLog.push('w2 hs')
+    t.equal(infoHash.toString(), '01234567890123456789')
+    t.equal(peerId.toString(), '12345678901234567890')
+    t.equal(extensions.extended, true)
+
+    // Respond asynchronously
+    process.nextTick(function () {
+      wire2.handshake(infoHash, peerId)
+    })
+  })
+  wire2.on('extended', function (ext, obj) {
+    if (ext === 'handshake') {
+      eventLog.push('w2 ex')
+      t.ok(obj)
+    }
+  })
+
+  wire1.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
+})
+
 test('Unchoke', function (t) {
   t.plan(4)
 
