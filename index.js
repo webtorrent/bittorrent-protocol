@@ -104,10 +104,12 @@ Wire.prototype.setKeepAlive = function (enable) {
 /**
  * Set the amount of time to wait before considering a request to be "timed out"
  * @param {number} ms
+ * @param {boolean=} unref (should the timer be unref'd? default: false)
  */
-Wire.prototype.setTimeout = function (ms) {
+Wire.prototype.setTimeout = function (ms, unref) {
   this._clearTimeout()
   this._timeoutMs = ms
+  this._timeoutUnref = !!unref
   this._updateTimeout()
 }
 
@@ -522,7 +524,7 @@ Wire.prototype._updateTimeout = function () {
   if (!this._timeoutMs || !this.requests.length || this._timeout) return
 
   this._timeout = setTimeout(this._onTimeout.bind(this), this._timeoutMs)
-  if (this._timeout.unref) this._timeout.unref()
+  if (this._timeoutUnref && this._timeout.unref) this._timeout.unref()
 }
 
 Wire.prototype._parse = function (size, parser) {
