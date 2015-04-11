@@ -522,6 +522,7 @@ Wire.prototype._updateTimeout = function () {
   if (!this._timeoutMs || !this.requests.length || this._timeout) return
 
   this._timeout = setTimeout(this._onTimeout.bind(this), this._timeoutMs)
+  if (this._timeout.unref) this._timeout.unref()
 }
 
 Wire.prototype._parse = function (size, parser) {
