@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "standard": "^2.3.1",
-    "tape": "^3.0.3",
+    "tape": "^4.0.0",
     "zuul": "^2.0.0"
   },
   "homepage": "http://webtorrent.io",
