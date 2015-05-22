@@ -114,7 +114,9 @@ Wire.prototype.setTimeout = function (ms, unref) {
 }
 
 Wire.prototype.destroy = function () {
+  if (this.destroyed) return
   this.destroyed = true
+  debug('destroy')
   this.end()
 }
 
