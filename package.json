@@ -16,7 +16,8 @@
     "debug": "^2.0.0",
     "inherits": "^2.0.1",
     "speedometer": "^0.1.2",
-    "xtend": "^4.0.0"
+    "xtend": "^4.0.0",
+    "zuul": "^3.0.0"
   },
   "devDependencies": {
     "standard": "^3.5.0",
