@@ -2,7 +2,7 @@ var Protocol = require('../')
 var test = require('tape')
 
 test('State changes correctly on wire \'end\'', function (t) {
-  t.plan(9)
+  t.plan(11)
 
   var wire = new Protocol()
   wire.pipe(wire)
@@ -32,6 +32,11 @@ test('State changes correctly on wire \'end\'', function (t) {
     })
 
     wire.on('end', function () {
+      t.ok(wire.peerChoking)
+      t.ok(!wire.peerInterested)
+    })
+
+    wire.on('finish', function () {
       t.ok(wire.peerChoking)
       t.ok(!wire.peerInterested)
     })
