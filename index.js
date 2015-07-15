@@ -77,7 +77,7 @@ function Wire () {
   this.uploadSpeed = speedometer()
   this.downloadSpeed = speedometer()
 
-  this._keepAlive = null
+  this._keepAliveInterval = null
   this._timeout = null
   this._timeoutMs = 0
 
@@ -99,10 +99,10 @@ function Wire () {
  * @param {boolean} enable
  */
 Wire.prototype.setKeepAlive = function (enable) {
-  clearInterval(this._keepAlive)
   this._debug('setKeepAlive %s', enable)
+  clearInterval(this._keepAliveInterval)
   if (enable === false) return
-  this._keepAlive = setInterval(this._push.bind(this, MESSAGE_KEEP_ALIVE), 60000)
+  this._keepAliveInterval = setInterval(this.keepAlive.bind(this), 60000)
 }
 
 /**
@@ -168,6 +168,14 @@ Wire.prototype.use = function (Extension) {
 //
 // OUTGOING MESSAGES
 //
+
+/**
+ * Message "keep-alive": <len=0000>
+ */
+Wire.prototype.keepAlive = function () {
+  this._debug('keep-alive')
+  this._push(MESSAGE_KEEP_ALIVE)
+}
 
 /**
  * Message: "handshake" <pstrlen><pstr><reserved><info_hash><peer_id>
@@ -668,7 +676,7 @@ Wire.prototype._onfinish = function () {
   this.push(null) // stream cannot be half open, so signal the end of it
   while (this.read()) {} // consume and discard the rest of the stream data
 
-  clearInterval(this._keepAlive)
+  clearInterval(this._keepAliveInterval)
   this._parse(Number.MAX_VALUE, function () {})
   this.peerRequests = []
   while (this.requests.length) {
