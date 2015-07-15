@@ -1,9 +1,10 @@
 module.exports = Wire
 
-var BitField = require('bitfield')
 var bencode = require('bencode')
+var BitField = require('bitfield')
 var debug = require('debug')('bittorrent-protocol')
 var extend = require('xtend')
+var hat = require('hat')
 var inherits = require('inherits')
 var speedometer = require('speedometer')
 var stream = require('stream')
@@ -32,7 +33,9 @@ inherits(Wire, stream.Duplex)
 function Wire () {
   if (!(this instanceof Wire)) return new Wire()
   stream.Duplex.call(this)
-  debug('new wire')
+
+  this._debugId = hat(32)
+  this._debug('new wire')
 
   this.amChoking = true // are we choking the peer?
   this.amInterested = false // are we interested in the peer?
@@ -97,6 +100,7 @@ function Wire () {
  */
 Wire.prototype.setKeepAlive = function (enable) {
   clearInterval(this._keepAlive)
+  this._debug('setKeepAlive %s', enable)
   if (enable === false) return
   this._keepAlive = setInterval(this._push.bind(this, MESSAGE_KEEP_ALIVE), 60000)
 }
@@ -107,6 +111,7 @@ Wire.prototype.setKeepAlive = function (enable) {
  * @param {boolean=} unref (should the timer be unref'd? default: false)
  */
 Wire.prototype.setTimeout = function (ms, unref) {
+  this._debug('setTimeout ms=%d unref=%s', ms, unref)
   this._clearTimeout()
   this._timeoutMs = ms
   this._timeoutUnref = !!unref
@@ -116,11 +121,12 @@ Wire.prototype.setTimeout = function (ms, unref) {
 Wire.prototype.destroy = function () {
   if (this.destroyed) return
   this.destroyed = true
-  debug('destroy')
+  this._debug('destroy')
   this.end()
 }
 
 Wire.prototype.end = function () {
+  this._debug('end')
   this._onUninterested()
   this._onChoke()
   stream.Duplex.prototype.end.apply(this, arguments)
@@ -133,8 +139,9 @@ Wire.prototype.end = function () {
 Wire.prototype.use = function (Extension) {
   var name = Extension.prototype.name
   if (!name) {
-    throw new Error('Extension API requires a named function, e.g. function name() {}')
+    throw new Error('Extension class requires a "name" property on the prototype')
   }
+  this._debug('use extension.name=%s', name)
 
   var ext = this._nextExt
   var handler = new Extension(this)
@@ -174,6 +181,11 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
   if (infoHash.length !== 20 || peerId.length !== 20) {
     throw new Error('infoHash and peerId MUST have length 20')
   }
+
+  this._debug(
+    'handshake i=%s p=%s exts=%o',
+    infoHash.toString('hex'), peerId.toString('hex'), extensions
+  )
 
   var reserved = new Buffer(MESSAGE_RESERVED)
 
@@ -217,6 +229,7 @@ Wire.prototype._sendExtendedHandshake = function () {
 Wire.prototype.choke = function () {
   if (this.amChoking) return
   this.amChoking = true
+  this._debug('choke')
   this.peerRequests.splice(0, this.peerRequests.length)
   this._push(MESSAGE_CHOKE)
 }
@@ -227,6 +240,7 @@ Wire.prototype.choke = function () {
 Wire.prototype.unchoke = function () {
   if (!this.amChoking) return
   this.amChoking = false
+  this._debug('unchoke')
   this._push(MESSAGE_UNCHOKE)
 }
 
@@ -236,6 +250,7 @@ Wire.prototype.unchoke = function () {
 Wire.prototype.interested = function () {
   if (this.amInterested) return
   this.amInterested = true
+  this._debug('interested')
   this._push(MESSAGE_INTERESTED)
 }
 
@@ -245,6 +260,7 @@ Wire.prototype.interested = function () {
 Wire.prototype.uninterested = function () {
   if (!this.amInterested) return
   this.amInterested = false
+  this._debug('uninterested')
   this._push(MESSAGE_UNINTERESTED)
 }
 
@@ -253,6 +269,7 @@ Wire.prototype.uninterested = function () {
  * @param  {number} index
  */
 Wire.prototype.have = function (index) {
+  this._debug('have %d', index)
   this._message(4, [index], null)
 }
 
@@ -261,6 +278,7 @@ Wire.prototype.have = function (index) {
  * @param  {BitField|Buffer} bitfield
  */
 Wire.prototype.bitfield = function (bitfield) {
+  this._debug('bitfield')
   if (!Buffer.isBuffer(bitfield)) bitfield = bitfield.buffer
   this._message(5, [], bitfield)
 }
@@ -274,9 +292,10 @@ Wire.prototype.bitfield = function (bitfield) {
  */
 Wire.prototype.request = function (index, offset, length, cb) {
   if (!cb) cb = function () {}
-
   if (this._finished) return cb(new Error('wire is closed'))
   if (this.peerChoking) return cb(new Error('peer is choking'))
+
+  this._debug('request index=%d offset=%d length=%d', index, offset, length)
 
   this.requests.push(new Request(index, offset, length, cb))
   this._updateTimeout()
@@ -290,6 +309,7 @@ Wire.prototype.request = function (index, offset, length, cb) {
  * @param  {Buffer} buffer
  */
 Wire.prototype.piece = function (index, offset, buffer) {
+  this._debug('piece index=%d offset=%d buffer=%o', index, offset, buffer)
   this.uploaded += buffer.length
   this.uploadSpeed(buffer.length)
   this.emit('upload', buffer.length)
@@ -303,6 +323,7 @@ Wire.prototype.piece = function (index, offset, buffer) {
  * @param  {number} length
  */
 Wire.prototype.cancel = function (index, offset, length) {
+  this._debug('cancel index=%d offset=%d length=%d', index, offset, length)
   this._callback(
     pull(this.requests, index, offset, length),
     new Error('request was cancelled'),
@@ -316,6 +337,7 @@ Wire.prototype.cancel = function (index, offset, length) {
  * @param {Number} port
  */
 Wire.prototype.port = function (port) {
+  this._debug('port %d', port)
   var message = new Buffer(MESSAGE_PORT)
   message.writeUInt16BE(port, 5)
   this._push(message)
@@ -327,6 +349,7 @@ Wire.prototype.port = function (port) {
  * @param  {Object} obj
  */
 Wire.prototype.extended = function (ext, obj) {
+  this._debug('extended ext=%d', ext)
   if (typeof ext === 'string' && this.peerExtendedMapping[ext]) {
     ext = this.peerExtendedMapping[ext]
   }
@@ -345,10 +368,15 @@ Wire.prototype.extended = function (ext, obj) {
 //
 
 Wire.prototype._onKeepAlive = function () {
+  this._debug('got keep-alive')
   this.emit('keep-alive')
 }
 
 Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
+  this._debug(
+    'got handshake i=%s p=%s exts=%o',
+    infoHash.toString('hex'), peerId.toString('hex'), extensions
+  )
   this.peerId = peerId
   this.peerExtensions = extensions
   this.emit('handshake', infoHash, peerId, extensions)
@@ -366,6 +394,7 @@ Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
 
 Wire.prototype._onChoke = function () {
   this.peerChoking = true
+  this._debug('got choke')
   this.emit('choke')
   while (this.requests.length) {
     this._callback(this.requests.shift(), new Error('peer is choking'), null)
@@ -374,21 +403,25 @@ Wire.prototype._onChoke = function () {
 
 Wire.prototype._onUnchoke = function () {
   this.peerChoking = false
+  this._debug('got unchoke')
   this.emit('unchoke')
 }
 
 Wire.prototype._onInterested = function () {
   this.peerInterested = true
+  this._debug('got interested')
   this.emit('interested')
 }
 
 Wire.prototype._onUninterested = function () {
   this.peerInterested = false
+  this._debug('got uninterested')
   this.emit('uninterested')
 }
 
 Wire.prototype._onHave = function (index) {
   if (this.peerPieces.get(index)) return
+  this._debug('got have %d', index)
 
   this.peerPieces.set(index, true)
   this.emit('have', index)
@@ -396,11 +429,13 @@ Wire.prototype._onHave = function (index) {
 
 Wire.prototype._onBitField = function (buffer) {
   this.peerPieces = new BitField(buffer)
+  this._debug('got bitfield')
   this.emit('bitfield', this.peerPieces)
 }
 
 Wire.prototype._onRequest = function (index, offset, length) {
   if (this.amChoking) return
+  this._debug('got request index=%d offset=%d length=%d', index, offset, length)
 
   var respond = function (err, buffer) {
     if (request !== pull(this.peerRequests, index, offset, length)) return
@@ -414,6 +449,7 @@ Wire.prototype._onRequest = function (index, offset, length) {
 }
 
 Wire.prototype._onPiece = function (index, offset, buffer) {
+  this._debug('got piece index=%d offset=%d', index, offset)
   this._callback(pull(this.requests, index, offset, buffer.length), null, buffer)
   this.downloaded += buffer.length
   this.downloadSpeed(buffer.length)
@@ -422,18 +458,29 @@ Wire.prototype._onPiece = function (index, offset, buffer) {
 }
 
 Wire.prototype._onCancel = function (index, offset, length) {
+  this._debug('got cancel index=%d offset=%d length=%d', index, offset, length)
   pull(this.peerRequests, index, offset, length)
   this.emit('cancel', index, offset, length)
 }
 
 Wire.prototype._onPort = function (port) {
+  this._debug('got port %d', port)
   this.emit('port', port)
 }
 
 Wire.prototype._onExtended = function (ext, buf) {
-  var info, name
-  if (ext === 0 && (info = safeBdecode(buf))) {
+  if (ext === 0) {
+    var info
+    try {
+      info = bencode.decode(buf)
+    } catch (err) {
+      this._debug('ignoring invalid extended handshake: %s', err.message || err)
+    }
+
+    if (!info) return
     this.peerExtendedHandshake = info
+
+    var name
     if (typeof info.m === 'object') {
       for (name in info.m) {
         this.peerExtendedMapping[name] = Number(info.m[name].toString())
@@ -444,6 +491,7 @@ Wire.prototype._onExtended = function (ext, buf) {
         this._ext[name].onExtendedHandshake(this.peerExtendedHandshake)
       }
     }
+    this._debug('got extended handshake')
     this.emit('extended', 'handshake', this.peerExtendedHandshake)
   } else {
     if (this.extendedMapping[ext]) {
@@ -453,11 +501,13 @@ Wire.prototype._onExtended = function (ext, buf) {
         this._ext[ext].onMessage(buf)
       }
     }
+    this._debug('got extended message ext=%s', ext)
     this.emit('extended', ext, buf)
   }
 }
 
 Wire.prototype._onTimeout = function () {
+  this._debug('request timed out')
   this._callback(this.requests.shift(), new Error('request has timed out'), null)
   this.emit('timeout')
 }
@@ -587,6 +637,7 @@ Wire.prototype._onmessage = function (buffer) {
     case 20:
       return this._onExtended(buffer.readUInt8(1), buffer.slice(2))
     default:
+      this._debug('got unknown message')
       return this.emit('unknownmessage', buffer)
   }
 }
@@ -597,7 +648,7 @@ Wire.prototype._parseHandshake = function () {
     this._parse(pstrlen + 48, function (handshake) {
       var protocol = handshake.slice(0, pstrlen)
       if (protocol.toString() !== 'BitTorrent protocol') {
-        debug('Error: wire not speaking BitTorrent protocol (%s)', protocol.toString())
+        this._debug('Error: wire not speaking BitTorrent protocol (%s)', protocol.toString())
         this.end()
         return
       }
@@ -625,6 +676,12 @@ Wire.prototype._onfinish = function () {
   }
 }
 
+Wire.prototype._debug = function () {
+  var args = [].slice.call(arguments)
+  args[0] = '[' + this._debugId + '] ' + args[0]
+  debug.apply(null, args)
+}
+
 function pull (requests, piece, offset, length) {
   for (var i = 0; i < requests.length; i++) {
     var req = requests[i]
@@ -636,12 +693,4 @@ function pull (requests, piece, offset, length) {
     return req
   }
   return null
-}
-
-function safeBdecode (buf) {
-  try {
-    return bencode.decode(buf)
-  } catch (e) {
-    console.warn(e)
-  }
 }
