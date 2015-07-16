@@ -317,7 +317,7 @@ Wire.prototype.request = function (index, offset, length, cb) {
  * @param  {Buffer} buffer
  */
 Wire.prototype.piece = function (index, offset, buffer) {
-  this._debug('piece index=%d offset=%d buffer=%o', index, offset, buffer)
+  this._debug('piece index=%d offset=%d', index, offset)
   this.uploaded += buffer.length
   this.uploadSpeed(buffer.length)
   this.emit('upload', buffer.length)
@@ -353,11 +353,11 @@ Wire.prototype.port = function (port) {
 
 /**
  * Message: "extended" <len=0005+X><id=20><ext-number><payload>
- * @param  {number} ext
+ * @param  {number|string} ext
  * @param  {Object} obj
  */
 Wire.prototype.extended = function (ext, obj) {
-  this._debug('extended ext=%d', ext)
+  this._debug('extended ext=%s', ext)
   if (typeof ext === 'string' && this.peerExtendedMapping[ext]) {
     ext = this.peerExtendedMapping[ext]
   }
