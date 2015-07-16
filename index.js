@@ -122,6 +122,7 @@ Wire.prototype.destroy = function () {
   if (this.destroyed) return
   this.destroyed = true
   this._debug('destroy')
+  this.emit('close')
   this.end()
 }
 
