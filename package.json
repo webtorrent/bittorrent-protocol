@@ -24,7 +24,6 @@
     "tape": "^4.0.0",
     "zuul": "^3.2.0"
   },
-  "homepage": "http://webtorrent.io",
   "keywords": [
     "torrent",
     "bittorrent",
