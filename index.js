@@ -37,6 +37,9 @@ function Wire () {
   this._debugId = hat(32)
   this._debug('new wire')
 
+  this.peerId = null // remote peer id (hex string)
+  this.peerIdBuffer = null // remote peer id (buffer)
+
   this.amChoking = true // are we choking the peer?
   this.amInterested = false // are we interested in the peer?
 
@@ -185,16 +188,25 @@ Wire.prototype.keepAlive = function () {
  * @param  {Object} extensions
  */
 Wire.prototype.handshake = function (infoHash, peerId, extensions) {
-  if (typeof infoHash === 'string') infoHash = new Buffer(infoHash, 'hex')
-  if (typeof peerId === 'string') peerId = new Buffer(peerId, 'hex')
-  if (infoHash.length !== 20 || peerId.length !== 20) {
+  var infoHashBuffer, peerIdBuffer
+  if (typeof infoHash === 'string') {
+    infoHashBuffer = new Buffer(infoHash, 'hex')
+  } else {
+    infoHashBuffer = infoHash
+    infoHash = infoHashBuffer.toString('hex')
+  }
+  if (typeof peerId === 'string') {
+    peerIdBuffer = new Buffer(peerId, 'hex')
+  } else {
+    peerIdBuffer = peerId
+    peerId = peerIdBuffer.toString('hex')
+  }
+
+  if (infoHashBuffer.length !== 20 || peerIdBuffer.length !== 20) {
     throw new Error('infoHash and peerId MUST have length 20')
   }
 
-  this._debug(
-    'handshake i=%s p=%s exts=%o',
-    infoHash.toString('hex'), peerId.toString('hex'), extensions
-  )
+  this._debug('handshake i=%s p=%s exts=%o', infoHash, peerId, extensions)
 
   var reserved = new Buffer(MESSAGE_RESERVED)
 
@@ -203,7 +215,7 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
 
   if (extensions && extensions.dht) reserved[7] |= 1
 
-  this._push(Buffer.concat([MESSAGE_PROTOCOL, reserved, infoHash, peerId]))
+  this._push(Buffer.concat([MESSAGE_PROTOCOL, reserved, infoHashBuffer, peerIdBuffer]))
   this._handshakeSent = true
 
   if (this.peerExtensions.extended) {
@@ -381,13 +393,16 @@ Wire.prototype._onKeepAlive = function () {
   this.emit('keep-alive')
 }
 
-Wire.prototype._onHandshake = function (infoHash, peerId, extensions) {
-  this._debug(
-    'got handshake i=%s p=%s exts=%o',
-    infoHash.toString('hex'), peerId.toString('hex'), extensions
-  )
+Wire.prototype._onHandshake = function (infoHashBuffer, peerIdBuffer, extensions) {
+  var infoHash = infoHashBuffer.toString('hex')
+  var peerId = peerIdBuffer.toString('hex')
+
+  this._debug('got handshake i=%s p=%s exts=%o', infoHash, peerId, extensions)
+
   this.peerId = peerId
+  this.peerIdBuffer = peerIdBuffer
   this.peerExtensions = extensions
+
   this.emit('handshake', infoHash, peerId, extensions)
 
   var name

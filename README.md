@@ -45,8 +45,10 @@ net.createServer(function (socket) {
 	socket.pipe(wire).pipe(socket)
 
 	wire.on('handshake', function (infoHash, peerId) {
+    // receive a handshake (infoHash and peerId are hex strings)
+
 		// lets emit a handshake of our own as well
-		wire.handshake(new Buffer('my info hash'), new Buffer('my peer id'))
+		wire.handshake('my info hash (hex)', 'my peer id (hex)')
 	})
 
 	wire.on('unchoke', function () {
@@ -65,13 +67,13 @@ Send and receive a handshake from the peer. This is the first message.
 // send a handshake to the peer
 wire.handshake(infoHash, peerId, { dht: true })
 wire.on('handshake', function (infoHash, peerId, extensions) {
-	// receive a handshake
+	// receive a handshake (infoHash and peerId are hex strings)
   console.log(extensions.dht) // supports DHT (BEP-0005)
   console.log(extensions.extended) // supports extension protocol (BEP-0010)
 })
 ```
 
-Both the `infoHash` and the `peerId` should be 20 bytes (`Buffer` or hex-encoded `string`).
+For `wire.handshake()`, the `infoHash` and the `peerId` should be 20 bytes (hex-encoded `string` or `Buffer`).
 
 ### choking
 
@@ -296,6 +298,7 @@ net.createServer(function (socket) {
 
   // handle handshake
   wire.on('handshake', function (infoHash, peerId) {
+    // receive a handshake (infoHash and peerId are hex strings)
     wire.handshake(new Buffer('my info hash'), new Buffer('my peer id'))
   })
 
