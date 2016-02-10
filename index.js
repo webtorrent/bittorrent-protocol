@@ -463,7 +463,7 @@ Wire.prototype._onRequest = function (index, offset, length) {
 
   var respond = function (err, buffer) {
     if (request !== pull(this.peerRequests, index, offset, length)) return
-    if (err) return
+    if (err) return this._debug('error satisfying request index=%d offset=%d length=%d (%s)', index, offset, length, err.message)
     this.piece(index, offset, buffer)
   }.bind(this)
 
