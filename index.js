@@ -218,7 +218,7 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
   this._push(Buffer.concat([MESSAGE_PROTOCOL, reserved, infoHashBuffer, peerIdBuffer]))
   this._handshakeSent = true
 
-  if (this.peerExtensions.extended) {
+  if (this.peerExtensions.extended && !this._extendedHandshakeSent) {
     // Peer's handshake indicated support already
     // (incoming connection)
     this._sendExtendedHandshake()
@@ -242,6 +242,7 @@ Wire.prototype._sendExtendedHandshake = function () {
 
   // Send extended handshake
   this.extended(0, bencode.encode(msg))
+  this._extendedHandshakeSent = true
 }
 
 /**
@@ -410,7 +411,8 @@ Wire.prototype._onHandshake = function (infoHashBuffer, peerIdBuffer, extensions
     this._ext[name].onHandshake(infoHash, peerId, extensions)
   }
 
-  if (extensions.extended && this._handshakeSent) {
+  if (extensions.extended && this._handshakeSent &&
+      !this._extendedHandshakeSent) {
     // outgoing connection
     this._sendExtendedHandshake()
   }
