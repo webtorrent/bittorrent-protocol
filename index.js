@@ -53,26 +53,19 @@ function Wire () {
 
   this.peerExtensions = {}
 
-  // outgoing
-  this.requests = []
-  // incoming
-  this.peerRequests = []
+  this.requests = [] // outgoing
+  this.peerRequests = [] // incoming
 
-  /** @type {Object} number -> string, ex: 1 -> 'ut_metadata' */
-  this.extendedMapping = {}
-  /** @type {Object} string -> number, ex: 9 -> 'ut_metadata' */
-  this.peerExtendedMapping = {}
+  this.extendedMapping = {} // number -> string, ex: 1 -> 'ut_metadata'
+  this.peerExtendedMapping = {} // string -> number, ex: 9 -> 'ut_metadata'
 
-  /**
-   * The extended handshake to send, minus the "m" field, which gets automatically
-   * filled from `this.extendedMapping`.
-   * @type {Object}
-   */
+  // The extended handshake to send, minus the "m" field, which gets automatically
+  // filled from `this.extendedMapping`
   this.extendedHandshake = {}
-  this.peerExtendedHandshake = {}
 
-  /** @type {Object} string -> function, ex 'ut_metadata' -> ut_metadata() */
-  this._ext = {}
+  this.peerExtendedHandshake = {} // remote peer's extended handshake
+
+  this._ext = {}  // string -> function, ex 'ut_metadata' -> ut_metadata()
   this._nextExt = 1
 
   this.uploaded = 0
@@ -87,12 +80,13 @@ function Wire () {
   this.destroyed = false // was the wire ended by calling `destroy`?
   this._finished = false
 
-  this._buffer = []
-  this._bufferSize = 0
-  this._parser = null
-  this._parserSize = 0
+  this._parserSize = 0 // number of needed bytes to parse next message from remote peer
+  this._parser = null // function to call once `this._parserSize` bytes are available
 
-  this.on('finish', this._onfinish)
+  this._buffer = [] // incomplete message data
+  this._bufferSize = 0 // cached total length of buffers in `this._buffer`
+
+  this.on('finish', this._onFinish)
 
   this._parseHandshake()
 }
@@ -136,10 +130,10 @@ Wire.prototype.end = function () {
   stream.Duplex.prototype.end.apply(this, arguments)
 }
 
-//
-// PROTOCOL EXTENSION API
-//
-
+/**
+ * Use the specified protocol extension.
+ * @param  {function} Extension
+ */
 Wire.prototype.use = function (Extension) {
   var name = Extension.prototype.name
   if (!name) {
@@ -385,6 +379,34 @@ Wire.prototype.extended = function (ext, obj) {
   }
 }
 
+/**
+ * Duplex stream method. Called whenever the remote peer stream wants data. No-op
+ * since we'll just push data whenever we get it.
+ */
+Wire.prototype._read = function () {}
+
+/**
+ * Send a message to the remote peer.
+ */
+Wire.prototype._message = function (id, numbers, data) {
+  var dataLength = data ? data.length : 0
+  var buffer = new Buffer(5 + 4 * numbers.length)
+
+  buffer.writeUInt32BE(buffer.length + dataLength - 4, 0)
+  buffer[4] = id
+  for (var i = 0; i < numbers.length; i++) {
+    buffer.writeUInt32BE(numbers[i], 5 + 4 * i)
+  }
+
+  this._push(buffer)
+  if (data) this._push(data)
+}
+
+Wire.prototype._push = function (data) {
+  if (this._finished) return
+  return this.push(data)
+}
+
 //
 // INCOMING MESSAGES
 //
@@ -538,23 +560,14 @@ Wire.prototype._onTimeout = function () {
   this.emit('timeout')
 }
 
-//
-// STREAM METHODS
-//
-
 /**
- * Push a message to the remote peer.
- * @param {Buffer} data
- */
-Wire.prototype._push = function (data) {
-  if (this._finished) return
-  return this.push(data)
-}
-
-/**
- * Duplex stream method. Called whenever the upstream has data for us.
- * @param  {Buffer|string} data
- * @param  {string}   encoding
+ * Duplex stream method. Called whenever the remote peer has data for us. Data that the
+ * remote peer sends gets buffered (i.e. not actually processed) until the right number
+ * of bytes have arrived, determined by the last call to `this._parse(number, callback)`.
+ * Once enough bytes have arrived to process the message, the callback function
+ * (i.e. `this._parser`) gets called with the full buffer of data.
+ * @param  {Buffer} data
+ * @param  {string} encoding
  * @param  {function} cb
  */
 Wire.prototype._write = function (data, encoding, cb) {
@@ -574,13 +587,6 @@ Wire.prototype._write = function (data, encoding, cb) {
 
   cb(null) // Signal that we're ready for more data
 }
-
-/**
- * Duplex stream method. Called whenever the downstream wants data. No-op
- * since we'll just push data whenever we get it. Extra data will be buffered
- * in memory (we don't want to apply backpressure to peers!).
- */
-Wire.prototype._read = function () {}
 
 Wire.prototype._callback = function (request, err, buffer) {
   if (!request) return
@@ -605,37 +611,39 @@ Wire.prototype._updateTimeout = function () {
   if (this._timeoutUnref && this._timeout.unref) this._timeout.unref()
 }
 
+/**
+ * Takes a number of bytes that the local peer is waiting to receive from the remote peer
+ * in order to parse a complete message, and a callback function to be called once enough
+ * bytes have arrived.
+ * @param  {number} size
+ * @param  {function} parser
+ */
 Wire.prototype._parse = function (size, parser) {
   this._parserSize = size
   this._parser = parser
 }
 
-Wire.prototype._message = function (id, numbers, data) {
-  var dataLength = data ? data.length : 0
-  var buffer = new Buffer(5 + 4 * numbers.length)
-
-  buffer.writeUInt32BE(buffer.length + dataLength - 4, 0)
-  buffer[4] = id
-  for (var i = 0; i < numbers.length; i++) {
-    buffer.writeUInt32BE(numbers[i], 5 + 4 * i)
-  }
-
-  this._push(buffer)
-  if (data) this._push(data)
-}
-
-Wire.prototype._onmessagelength = function (buffer) {
+/**
+ * Handle the first 4 bytes of a message, to determine the length of bytes that must be
+ * waited for in order to have the whole message.
+ * @param  {Buffer} buffer
+ */
+Wire.prototype._onMessageLength = function (buffer) {
   var length = buffer.readUInt32BE(0)
   if (length > 0) {
-    this._parse(length, this._onmessage)
+    this._parse(length, this._onMessage)
   } else {
     this._onKeepAlive()
-    this._parse(4, this._onmessagelength)
+    this._parse(4, this._onMessageLength)
   }
 }
 
-Wire.prototype._onmessage = function (buffer) {
-  this._parse(4, this._onmessagelength)
+/**
+ * Handle a message from the remote peer.
+ * @param  {Buffer} buffer
+ */
+Wire.prototype._onMessage = function (buffer) {
+  this._parse(4, this._onMessageLength)
   switch (buffer[0]) {
     case 0:
       return this._onChoke()
@@ -683,12 +691,12 @@ Wire.prototype._parseHandshake = function () {
         dht: !!(handshake[7] & 0x01), // see bep_0005
         extended: !!(handshake[5] & 0x10) // see bep_0010
       })
-      this._parse(4, this._onmessagelength)
+      this._parse(4, this._onMessageLength)
     }.bind(this))
   }.bind(this))
 }
 
-Wire.prototype._onfinish = function () {
+Wire.prototype._onFinish = function () {
   this._finished = true
 
   this.push(null) // stream cannot be half open, so signal the end of it
