@@ -7,7 +7,7 @@ var extend = require('xtend')
 var hat = require('hat')
 var inherits = require('inherits')
 var speedometer = require('speedometer')
-var stream = require('stream')
+var stream = require('readable-stream')
 
 var BITFIELD_GROW = 400000
 
