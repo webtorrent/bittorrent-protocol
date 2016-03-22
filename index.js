@@ -39,6 +39,7 @@ function Wire () {
 
   this.peerId = null // remote peer id (hex string)
   this.peerIdBuffer = null // remote peer id (buffer)
+  this.type = null // connection type ('webrtc', 'tcpIncoming', 'tcpOutgoing', 'webSeed')
 
   this.amChoking = true // are we choking the peer?
   this.amInterested = false // are we interested in the peer?
