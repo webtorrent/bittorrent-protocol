@@ -5,6 +5,7 @@ test('No timeout when peer is good', function (t) {
   t.plan(6)
 
   var wire = new Protocol()
+  wire.on('error', t.fail)
   wire.pipe(wire)
   wire.setTimeout(1000)
   wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
