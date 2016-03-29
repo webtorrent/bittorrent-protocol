@@ -10,6 +10,7 @@ var speedometer = require('speedometer')
 var stream = require('readable-stream')
 
 var BITFIELD_GROW = 400000
+var KEEP_ALIVE_TIMEOUT = 55000
 
 var MESSAGE_PROTOCOL = new Buffer('\u0013BitTorrent protocol')
 var MESSAGE_KEEP_ALIVE = new Buffer([0x00, 0x00, 0x00, 0x00])
@@ -93,14 +94,17 @@ function Wire () {
 }
 
 /**
- * Set whether to send a "keep-alive" ping (sent every 60s)
+ * Set whether to send a "keep-alive" ping (sent every 55s)
  * @param {boolean} enable
  */
 Wire.prototype.setKeepAlive = function (enable) {
-  this._debug('setKeepAlive %s', enable)
-  clearInterval(this._keepAliveInterval)
+  var self = this
+  self._debug('setKeepAlive %s', enable)
+  clearInterval(self._keepAliveInterval)
   if (enable === false) return
-  this._keepAliveInterval = setInterval(this.keepAlive.bind(this), 60000)
+  self._keepAliveInterval = setInterval(function () {
+    self.keepAlive()
+  }, KEEP_ALIVE_TIMEOUT)
 }
 
 /**
@@ -483,18 +487,19 @@ Wire.prototype._onBitField = function (buffer) {
 }
 
 Wire.prototype._onRequest = function (index, offset, length) {
-  if (this.amChoking) return
-  this._debug('got request index=%d offset=%d length=%d', index, offset, length)
+  var self = this
+  if (self.amChoking) return
+  self._debug('got request index=%d offset=%d length=%d', index, offset, length)
 
   var respond = function (err, buffer) {
-    if (request !== pull(this.peerRequests, index, offset, length)) return
-    if (err) return this._debug('error satisfying request index=%d offset=%d length=%d (%s)', index, offset, length, err.message)
-    this.piece(index, offset, buffer)
-  }.bind(this)
+    if (request !== pull(self.peerRequests, index, offset, length)) return
+    if (err) return self._debug('error satisfying request index=%d offset=%d length=%d (%s)', index, offset, length, err.message)
+    self.piece(index, offset, buffer)
+  }
 
   var request = new Request(index, offset, length, respond)
-  this.peerRequests.push(request)
-  this.emit('request', index, offset, length, respond)
+  self.peerRequests.push(request)
+  self.emit('request', index, offset, length, respond)
 }
 
 Wire.prototype._onPiece = function (index, offset, buffer) {
@@ -606,10 +611,13 @@ Wire.prototype._clearTimeout = function () {
 }
 
 Wire.prototype._updateTimeout = function () {
-  if (!this._timeoutMs || !this.requests.length || this._timeout) return
+  var self = this
+  if (!self._timeoutMs || !self.requests.length || self._timeout) return
 
-  this._timeout = setTimeout(this._onTimeout.bind(this), this._timeoutMs)
-  if (this._timeoutUnref && this._timeout.unref) this._timeout.unref()
+  self._timeout = setTimeout(function () {
+    self._onTimeout()
+  }, self._timeoutMs)
+  if (self._timeoutUnref && self._timeout.unref) self._timeout.unref()
 }
 
 /**
@@ -678,23 +686,24 @@ Wire.prototype._onMessage = function (buffer) {
 }
 
 Wire.prototype._parseHandshake = function () {
-  this._parse(1, function (buffer) {
+  var self = this
+  self._parse(1, function (buffer) {
     var pstrlen = buffer.readUInt8(0)
-    this._parse(pstrlen + 48, function (handshake) {
+    self._parse(pstrlen + 48, function (handshake) {
       var protocol = handshake.slice(0, pstrlen)
       if (protocol.toString() !== 'BitTorrent protocol') {
-        this._debug('Error: wire not speaking BitTorrent protocol (%s)', protocol.toString())
-        this.end()
+        self._debug('Error: wire not speaking BitTorrent protocol (%s)', protocol.toString())
+        self.end()
         return
       }
       handshake = handshake.slice(pstrlen)
-      this._onHandshake(handshake.slice(8, 28), handshake.slice(28, 48), {
+      self._onHandshake(handshake.slice(8, 28), handshake.slice(28, 48), {
         dht: !!(handshake[7] & 0x01), // see bep_0005
         extended: !!(handshake[5] & 0x10) // see bep_0010
       })
-      this._parse(4, this._onMessageLength)
-    }.bind(this))
-  }.bind(this))
+      self._parse(4, self._onMessageLength)
+    })
+  })
 }
 
 Wire.prototype._onFinish = function () {
