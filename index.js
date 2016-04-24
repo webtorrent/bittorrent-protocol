@@ -375,10 +375,10 @@ Wire.prototype.extended = function (ext, obj) {
     ext = this.peerExtendedMapping[ext]
   }
   if (typeof ext === 'number') {
-    var ext_id = new Buffer([ext])
+    var extId = new Buffer([ext])
     var buf = Buffer.isBuffer(obj) ? obj : bencode.encode(obj)
 
-    this._message(20, [], Buffer.concat([ext_id, buf]))
+    this._message(20, [], Buffer.concat([extId, buf]))
   } else {
     throw new Error('Unrecognized extension: ' + ext)
   }
