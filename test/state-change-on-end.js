@@ -5,7 +5,7 @@ test('State changes correctly on wire \'end\'', function (t) {
   t.plan(11)
 
   var wire = new Protocol()
-  wire.on('error', t.fail)
+  wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
 
   wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))

@@ -5,7 +5,7 @@ test('Handshake', function (t) {
   t.plan(4)
 
   var wire = new Protocol()
-  wire.on('error', t.fail)
+  wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
 
   wire.on('handshake', function (infoHash, peerId) {
@@ -22,7 +22,7 @@ test('Handshake (with string args)', function (t) {
   t.plan(4)
 
   var wire = new Protocol()
-  wire.on('error', t.fail)
+  wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
 
   wire.on('handshake', function (infoHash, peerId) {
@@ -41,8 +41,8 @@ test('Asynchronous handshake + extended handshake', function (t) {
   var wire1 = new Protocol()  // outgoing
   var wire2 = new Protocol()  // incoming
   wire1.pipe(wire2).pipe(wire1)
-  wire1.on('error', t.fail)
-  wire2.on('error', t.fail)
+  wire1.on('error', function (err) { t.fail(err) })
+  wire2.on('error', function (err) { t.fail(err) })
 
   wire1.on('handshake', function (infoHash, peerId, extensions) {
     eventLog.push('w1 hs')
@@ -86,7 +86,7 @@ test('Unchoke', function (t) {
   t.plan(4)
 
   var wire = new Protocol()
-  wire.on('error', t.fail)
+  wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
   wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
 
@@ -105,7 +105,7 @@ test('Interested', function (t) {
   t.plan(4)
 
   var wire = new Protocol()
-  wire.on('error', t.fail)
+  wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
   wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
 
@@ -124,7 +124,7 @@ test('Request a piece', function (t) {
   t.plan(12)
 
   var wire = new Protocol()
-  wire.on('error', t.fail)
+  wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
   wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
 
@@ -157,7 +157,7 @@ test('No duplicate `have` events for same piece', function (t) {
   t.plan(6)
 
   var wire = new Protocol()
-  wire.on('error', t.fail)
+  wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
 
   wire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')

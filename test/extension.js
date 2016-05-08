@@ -31,7 +31,7 @@ test('Extension.onHandshake', function (t) {
   }
 
   var wire = new Protocol()
-  wire.on('error', t.fail)
+  wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
 
   wire.use(TestExtension)
@@ -54,8 +54,8 @@ test('Extension.onExtendedHandshake', function (t) {
   }
 
   var wire = new Protocol()  // incoming
+  wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
-  wire.on('error', t.fail)
 
   wire.once('handshake', function (infoHash, peerId, extensions) {
     t.equal(extensions.extended, true)
@@ -78,8 +78,8 @@ test('Extension.onMessage', function (t) {
   }
 
   var wire = new Protocol()  // outgoing
+  wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
-  wire.on('error', t.fail)
 
   wire.use(TestExtension)
 
