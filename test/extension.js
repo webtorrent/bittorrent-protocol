@@ -24,10 +24,10 @@ test('Extension.onHandshake', function (t) {
   function TestExtension () {}
   TestExtension.prototype.name = 'test_extension'
   TestExtension.prototype.onHandshake = function (infoHash, peerId, extensions) {
-    t.equal(new Buffer(infoHash, 'hex').length, 20)
-    t.equal(new Buffer(infoHash, 'hex').toString(), '01234567890123456789')
-    t.equal(new Buffer(peerId, 'hex').length, 20)
-    t.equal(new Buffer(peerId, 'hex').toString(), '12345678901234567890')
+    t.equal(Buffer.from(infoHash, 'hex').length, 20)
+    t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
+    t.equal(Buffer.from(peerId, 'hex').length, 20)
+    t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
   }
 
   var wire = new Protocol()
@@ -36,7 +36,7 @@ test('Extension.onHandshake', function (t) {
 
   wire.use(TestExtension)
 
-  wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 })
 
 test('Extension.onExtendedHandshake', function (t) {
@@ -86,6 +86,6 @@ test('Extension.onMessage', function (t) {
   wire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
 
   wire.once('extended', function () {
-    wire.extended('test_extension', new Buffer('hello world!'))
+    wire.extended('test_extension', Buffer.from('hello world!'))
   })
 })

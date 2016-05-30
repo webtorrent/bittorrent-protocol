@@ -9,13 +9,13 @@ test('Handshake', function (t) {
   wire.pipe(wire)
 
   wire.on('handshake', function (infoHash, peerId) {
-    t.equal(new Buffer(infoHash, 'hex').length, 20)
-    t.equal(new Buffer(infoHash, 'hex').toString(), '01234567890123456789')
-    t.equal(new Buffer(peerId, 'hex').length, 20)
-    t.equal(new Buffer(peerId, 'hex').toString(), '12345678901234567890')
+    t.equal(Buffer.from(infoHash, 'hex').length, 20)
+    t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
+    t.equal(Buffer.from(peerId, 'hex').length, 20)
+    t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
   })
 
-  wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 })
 
 test('Handshake (with string args)', function (t) {
@@ -26,10 +26,10 @@ test('Handshake (with string args)', function (t) {
   wire.pipe(wire)
 
   wire.on('handshake', function (infoHash, peerId) {
-    t.equal(new Buffer(infoHash, 'hex').length, 20)
-    t.equal(new Buffer(infoHash, 'hex').toString(), '01234567890123456789')
-    t.equal(new Buffer(peerId, 'hex').length, 20)
-    t.equal(new Buffer(peerId, 'hex').toString(), '12345678901234567890')
+    t.equal(Buffer.from(infoHash, 'hex').length, 20)
+    t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
+    t.equal(Buffer.from(peerId, 'hex').length, 20)
+    t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
   })
 
   wire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
@@ -46,8 +46,8 @@ test('Asynchronous handshake + extended handshake', function (t) {
 
   wire1.on('handshake', function (infoHash, peerId, extensions) {
     eventLog.push('w1 hs')
-    t.equal(new Buffer(infoHash, 'hex').toString(), '01234567890123456789')
-    t.equal(new Buffer(peerId, 'hex').toString(), '12345678901234567890')
+    t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
+    t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
     t.equal(extensions.extended, true)
   })
   wire1.on('extended', function (ext, obj) {
@@ -63,8 +63,8 @@ test('Asynchronous handshake + extended handshake', function (t) {
 
   wire2.on('handshake', function (infoHash, peerId, extensions) {
     eventLog.push('w2 hs')
-    t.equal(new Buffer(infoHash, 'hex').toString(), '01234567890123456789')
-    t.equal(new Buffer(peerId, 'hex').toString(), '12345678901234567890')
+    t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
+    t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
     t.equal(extensions.extended, true)
 
     // Respond asynchronously
@@ -88,7 +88,7 @@ test('Unchoke', function (t) {
   var wire = new Protocol()
   wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
-  wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
   t.ok(wire.amChoking)
   t.ok(wire.peerChoking)
@@ -107,7 +107,7 @@ test('Interested', function (t) {
   var wire = new Protocol()
   wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
-  wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
   t.ok(!wire.amInterested)
   t.ok(!wire.peerInterested)
@@ -126,7 +126,7 @@ test('Request a piece', function (t) {
   var wire = new Protocol()
   wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
-  wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
   t.equal(wire.requests.length, 0)
   t.equal(wire.peerRequests.length, 0)
@@ -137,7 +137,7 @@ test('Request a piece', function (t) {
     t.equal(i, 0)
     t.equal(offset, 1)
     t.equal(length, 11)
-    callback(null, new Buffer('hello world'))
+    callback(null, Buffer.from('hello world'))
   })
 
   wire.once('unchoke', function () {
