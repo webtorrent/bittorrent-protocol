@@ -2,6 +2,7 @@ module.exports = Wire
 
 var bencode = require('bencode')
 var BitField = require('bitfield')
+var Buffer = require('safe-buffer').Buffer
 var debug = require('debug')('bittorrent-protocol')
 var extend = require('xtend')
 var hat = require('hat')
