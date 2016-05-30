@@ -8,7 +8,7 @@ test('State changes correctly on wire \'end\'', function (t) {
   wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
 
-  wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
   t.ok(wire.amChoking)
   t.ok(wire.peerChoking)

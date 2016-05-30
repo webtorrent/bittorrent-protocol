@@ -8,7 +8,7 @@ test('No timeout when peer is good', function (t) {
   wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
   wire.setTimeout(1000)
-  wire.handshake(new Buffer('01234567890123456789'), new Buffer('12345678901234567890'))
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
   wire.on('unchoke', function () {
     var requests = 0
@@ -30,7 +30,7 @@ test('No timeout when peer is good', function (t) {
   })
 
   wire.on('request', function (i, offset, length, callback) {
-    callback(null, new Buffer('hello world'))
+    callback(null, Buffer.from('hello world'))
   })
 
   // there should never be a timeout

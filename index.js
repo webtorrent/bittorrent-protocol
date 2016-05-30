@@ -12,12 +12,12 @@ var stream = require('readable-stream')
 var BITFIELD_GROW = 400000
 var KEEP_ALIVE_TIMEOUT = 55000
 
-var MESSAGE_PROTOCOL = new Buffer('\u0013BitTorrent protocol')
-var MESSAGE_KEEP_ALIVE = new Buffer([0x00, 0x00, 0x00, 0x00])
-var MESSAGE_CHOKE = new Buffer([0x00, 0x00, 0x00, 0x01, 0x00])
-var MESSAGE_UNCHOKE = new Buffer([0x00, 0x00, 0x00, 0x01, 0x01])
-var MESSAGE_INTERESTED = new Buffer([0x00, 0x00, 0x00, 0x01, 0x02])
-var MESSAGE_UNINTERESTED = new Buffer([0x00, 0x00, 0x00, 0x01, 0x03])
+var MESSAGE_PROTOCOL = Buffer.from('\u0013BitTorrent protocol')
+var MESSAGE_KEEP_ALIVE = Buffer.from([0x00, 0x00, 0x00, 0x00])
+var MESSAGE_CHOKE = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x00])
+var MESSAGE_UNCHOKE = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x01])
+var MESSAGE_INTERESTED = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x02])
+var MESSAGE_UNINTERESTED = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x03])
 
 var MESSAGE_RESERVED = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 var MESSAGE_PORT = [0x00, 0x00, 0x00, 0x03, 0x09, 0x00, 0x00]
@@ -189,13 +189,13 @@ Wire.prototype.keepAlive = function () {
 Wire.prototype.handshake = function (infoHash, peerId, extensions) {
   var infoHashBuffer, peerIdBuffer
   if (typeof infoHash === 'string') {
-    infoHashBuffer = new Buffer(infoHash, 'hex')
+    infoHashBuffer = Buffer.from(infoHash, 'hex')
   } else {
     infoHashBuffer = infoHash
     infoHash = infoHashBuffer.toString('hex')
   }
   if (typeof peerId === 'string') {
-    peerIdBuffer = new Buffer(peerId, 'hex')
+    peerIdBuffer = Buffer.from(peerId, 'hex')
   } else {
     peerIdBuffer = peerId
     peerId = peerIdBuffer.toString('hex')
@@ -207,7 +207,7 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
 
   this._debug('handshake i=%s p=%s exts=%o', infoHash, peerId, extensions)
 
-  var reserved = new Buffer(MESSAGE_RESERVED)
+  var reserved = Buffer.from(MESSAGE_RESERVED)
 
   // enable extended message
   reserved[5] |= 0x10
@@ -359,7 +359,7 @@ Wire.prototype.cancel = function (index, offset, length) {
  */
 Wire.prototype.port = function (port) {
   this._debug('port %d', port)
-  var message = new Buffer(MESSAGE_PORT)
+  var message = Buffer.from(MESSAGE_PORT)
   message.writeUInt16BE(port, 5)
   this._push(message)
 }
@@ -375,7 +375,7 @@ Wire.prototype.extended = function (ext, obj) {
     ext = this.peerExtendedMapping[ext]
   }
   if (typeof ext === 'number') {
-    var extId = new Buffer([ext])
+    var extId = Buffer.from([ext])
     var buf = Buffer.isBuffer(obj) ? obj : bencode.encode(obj)
 
     this._message(20, [], Buffer.concat([extId, buf]))
@@ -395,7 +395,7 @@ Wire.prototype._read = function () {}
  */
 Wire.prototype._message = function (id, numbers, data) {
   var dataLength = data ? data.length : 0
-  var buffer = new Buffer(5 + 4 * numbers.length)
+  var buffer = Buffer.allocUnsafe(5 + 4 * numbers.length)
 
   buffer.writeUInt32BE(buffer.length + dataLength - 4, 0)
   buffer[4] = id
