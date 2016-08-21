@@ -5,8 +5,8 @@ var BitField = require('bitfield')
 var Buffer = require('safe-buffer').Buffer
 var debug = require('debug')('bittorrent-protocol')
 var extend = require('xtend')
-var hat = require('hat')
 var inherits = require('inherits')
+var randombytes = require('randombytes')
 var speedometer = require('speedometer')
 var stream = require('readable-stream')
 
@@ -36,7 +36,7 @@ function Wire () {
   if (!(this instanceof Wire)) return new Wire()
   stream.Duplex.call(this)
 
-  this._debugId = hat(32)
+  this._debugId = randombytes(4).toString('hex')
   this._debug('new wire')
 
   this.peerId = null // remote peer id (hex string)
