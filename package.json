@@ -1,7 +1,7 @@
 {
   "name": "bittorrent-protocol",
   "description": "Simple, robust, BitTorrent peer wire protocol implementation",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "author": {
     "name": "Feross Aboukhadijeh",
     "email": "feross@feross.org",
