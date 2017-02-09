@@ -396,12 +396,12 @@ Wire.prototype._read = function () {}
  */
 Wire.prototype._message = function (id, numbers, data) {
   var dataLength = data ? data.length : 0
-  var buffer = Buffer.allocUnsafe(5 + 4 * numbers.length)
+  var buffer = Buffer.allocUnsafe(5 + (4 * numbers.length))
 
   buffer.writeUInt32BE(buffer.length + dataLength - 4, 0)
   buffer[4] = id
   for (var i = 0; i < numbers.length; i++) {
-    buffer.writeUInt32BE(numbers[i], 5 + 4 * i)
+    buffer.writeUInt32BE(numbers[i], 5 + (4 * i))
   }
 
   this._push(buffer)
