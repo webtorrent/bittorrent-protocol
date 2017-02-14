@@ -1,5 +1,6 @@
 module.exports = Wire
 
+var arrayRemove = require('unordered-array-remove')
 var bencode = require('bencode')
 var BitField = require('bitfield')
 var Buffer = require('safe-buffer').Buffer
@@ -252,7 +253,9 @@ Wire.prototype.choke = function () {
   if (this.amChoking) return
   this.amChoking = true
   this._debug('choke')
-  this.peerRequests.splice(0, this.peerRequests.length)
+  while (this.peerRequests.length) {
+    this.peerRequests.pop()
+  }
   this._push(MESSAGE_CHOKE)
 }
 
@@ -451,7 +454,7 @@ Wire.prototype._onChoke = function () {
   this._debug('got choke')
   this.emit('choke')
   while (this.requests.length) {
-    this._callback(this.requests.shift(), new Error('peer is choking'), null)
+    this._callback(this.requests.pop(), new Error('peer is choking'), null)
   }
 }
 
@@ -715,9 +718,11 @@ Wire.prototype._onFinish = function () {
 
   clearInterval(this._keepAliveInterval)
   this._parse(Number.MAX_VALUE, function () {})
-  this.peerRequests = []
+  while (this.peerRequests.length) {
+    this.peerRequests.pop()
+  }
   while (this.requests.length) {
-    this._callback(this.requests.shift(), new Error('wire was closed'), null)
+    this._callback(this.requests.pop(), new Error('wire was closed'), null)
   }
 }
 
@@ -730,12 +735,10 @@ Wire.prototype._debug = function () {
 function pull (requests, piece, offset, length) {
   for (var i = 0; i < requests.length; i++) {
     var req = requests[i]
-    if (req.piece !== piece || req.offset !== offset || req.length !== length) continue
-
-    if (i === 0) requests.shift()
-    else requests.splice(i, 1)
-
-    return req
+    if (req.piece === piece && req.offset === offset && req.length === length) {
+      arrayRemove(requests, i)
+      return req
+    }
   }
   return null
 }
