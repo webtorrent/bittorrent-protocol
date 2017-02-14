@@ -3,7 +3,7 @@ var Protocol = require('../')
 var test = require('tape')
 
 test('Timeout and destroy when peer does not respond', function (t) {
-  t.plan(7)
+  t.plan(4)
 
   var timeouts = 0
 
@@ -14,26 +14,21 @@ test('Timeout and destroy when peer does not respond', function (t) {
   wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
   wire.on('unchoke', function () {
-    var requests = 0
-
     wire.request(0, 0, 0, function (err) {
       t.ok(err)
-      t.ok(++requests === 1)
     })
 
     wire.request(0, 0, 0, function (err) {
       t.ok(err)
-      t.ok(++requests === 2)
     })
 
     wire.request(0, 0, 0, function (err) {
       t.ok(err)
-      t.ok(++requests === 3)
     })
   })
 
   wire.on('timeout', function () {
-    t.ok(++timeouts === 1)
+    t.equal(++timeouts, 1)
     wire.end()
   })
 
