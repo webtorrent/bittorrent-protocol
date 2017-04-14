@@ -1,7 +1,7 @@
 # bittorrent-protocol [![travis][travis-image]][travis-url] [![npm][npm-image]][npm-url] [![downloads][downloads-image]][downloads-url] [![javascript style guide][standard-image]][standard-url]
 
-[travis-image]: https://img.shields.io/travis/feross/bittorrent-protocol/master.svg
-[travis-url]: https://travis-ci.org/feross/bittorrent-protocol
+[travis-image]: https://img.shields.io/travis/webtorrent/bittorrent-protocol/master.svg
+[travis-url]: https://travis-ci.org/webtorrent/bittorrent-protocol
 [npm-image]: https://img.shields.io/npm/v/bittorrent-protocol.svg
 [npm-url]: https://npmjs.org/package/bittorrent-protocol
 [downloads-image]: https://img.shields.io/npm/dm/bittorrent-protocol.svg
@@ -224,7 +224,7 @@ wire.extended(code, buffer)
 This package, **bittorrent-protocol**, also provides an extension API to make it easy to
 add extensions to this module using the "extension protocol" (BEP 10). For example, to
 support ut_metadata (BEP 9), you need only install the
-[ut_metadata](https://github.com/feross/ut_metadata) npm module and call `wire.use()`.
+[ut_metadata](https://www.npmjs.com/package/ut_metadata) npm module and call `wire.use()`.
 See the [Extension API](#extension-api) section for more information.
 
 ### transfer stats
@@ -254,8 +254,8 @@ functionality with common protocol extensions like ut_metadata (magnet uris).
 
 Here are the **bittorrent-protocol** extensions that we know about:
 
-- [ut_metadata](https://github.com/feross/ut_metadata) - Extension for Peers to Send Metadata Files (BEP 9)
-- [ut_pex](https://github.com/fisch0920/ut_pex) - Extension for Peer Discovery (PEX)
+- [ut_metadata](https://www.npmjs.com/package/ut_metadata) - Extension for Peers to Send Metadata Files (BEP 9)
+- [ut_pex](https://www.npmjs.com/package/ut_pex) - Extension for Peer Discovery (PEX)
 - *Add yours here! Send a pull request!*
 
 In short, an extension can register itself with at a certain name, which will be added to
@@ -308,7 +308,7 @@ net.createServer(function (socket) {
 ```
 
 If you want to write your own extension, take a look at the
-[ut_metadata index.js file](https://github.com/feross/ut_metadata/blob/master/index.js)
+[ut_metadata index.js file](https://github.com/webtorrent/ut_metadata/blob/master/index.js)
 to see how it's done.
 
 ## license

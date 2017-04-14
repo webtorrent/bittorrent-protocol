@@ -8,7 +8,7 @@
     "url": "http://feross.org/"
   },
   "bugs": {
-    "url": "https://github.com/feross/bittorrent-protocol/issues"
+    "url": "https://github.com/webtorrent/bittorrent-protocol/issues"
   },
   "dependencies": {
     "bencode": "^0.11.0",
@@ -41,7 +41,7 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/feross/bittorrent-protocol.git"
+    "url": "git://github.com/webtorrent/bittorrent-protocol.git"
   },
   "scripts": {
     "test": "standard && npm run test-node && npm run test-browser",
