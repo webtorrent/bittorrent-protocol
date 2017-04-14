@@ -313,6 +313,4 @@ to see how it's done.
 
 ## license
 
-MIT. Copyright (c) [Feross Aboukhadijeh](http://feross.org).
-
-Includes code from [peer-wire-protocol](https://github.com/mafintosh/peer-wire-protocol) by mafintosh, which is also MIT.
+MIT. Copyright (c) [Feross Aboukhadijeh](https://feross.org), Mathias Buus, and [WebTorrent, LLC](https://webtorrent.io).
