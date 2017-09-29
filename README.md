@@ -1,4 +1,4 @@
-# bittorrent-protocol [![travis][travis-image]][travis-url] [![npm][npm-image]][npm-url] [![downloads][downloads-image]][downloads-url] [![javascript style guide][standard-image]][standard-url]
+# bittorrent-protocol [![travis][travis-image]][travis-url] [![npm][npm-image]][npm-url] [![downloads][downloads-image]][downloads-url] [![javascript style guide][standard-image]][standard-url] [![Greenkeeper badge][greenkeeper-image]][greenkeeper-url]
 
 [travis-image]: https://img.shields.io/travis/webtorrent/bittorrent-protocol/master.svg
 [travis-url]: https://travis-ci.org/webtorrent/bittorrent-protocol
@@ -8,6 +8,8 @@
 [downloads-url]: https://npmjs.org/package/bittorrent-protocol
 [standard-image]: https://img.shields.io/badge/code_style-standard-brightgreen.svg
 [standard-url]: https://standardjs.com
+[greenkeeper-image]: https://badges.greenkeeper.io/webtorrent/bittorrent-protocol.svg
+[greenkeeper-url]: https://greenkeeper.io/
 
 ### Simple, robust, BitTorrent wire protocol implementation
 
