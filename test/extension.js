@@ -54,7 +54,7 @@ test('Extension.onExtendedHandshake', function (t) {
     t.equal(handshake.hello.toString(), 'world!', 'peer extended handshake includes extension-defined parameters')
   }
 
-  var wire = new Protocol()  // incoming
+  var wire = new Protocol() // incoming
   wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
 
@@ -78,7 +78,7 @@ test('Extension.onMessage', function (t) {
     t.equal(message.toString(), 'hello world!', 'receives message sent with wire.extended()')
   }
 
-  var wire = new Protocol()  // outgoing
+  var wire = new Protocol() // outgoing
   wire.on('error', function (err) { t.fail(err) })
   wire.pipe(wire)
 

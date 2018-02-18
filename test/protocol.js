@@ -39,8 +39,8 @@ test('Handshake (with string args)', function (t) {
 test('Asynchronous handshake + extended handshake', function (t) {
   var eventLog = []
 
-  var wire1 = new Protocol()  // outgoing
-  var wire2 = new Protocol()  // incoming
+  var wire1 = new Protocol() // outgoing
+  var wire2 = new Protocol() // incoming
   wire1.pipe(wire2).pipe(wire1)
   wire1.on('error', function (err) { t.fail(err) })
   wire2.on('error', function (err) { t.fail(err) })

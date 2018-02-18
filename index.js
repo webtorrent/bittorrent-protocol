@@ -69,7 +69,7 @@ function Wire () {
 
   this.peerExtendedHandshake = {} // remote peer's extended handshake
 
-  this._ext = {}  // string -> function, ex 'ut_metadata' -> ut_metadata()
+  this._ext = {} // string -> function, ex 'ut_metadata' -> ut_metadata()
   this._nextExt = 1
 
   this.uploaded = 0
@@ -672,13 +672,13 @@ Wire.prototype._onMessage = function (buffer) {
       return this._onBitField(buffer.slice(1))
     case 6:
       return this._onRequest(buffer.readUInt32BE(1),
-          buffer.readUInt32BE(5), buffer.readUInt32BE(9))
+        buffer.readUInt32BE(5), buffer.readUInt32BE(9))
     case 7:
       return this._onPiece(buffer.readUInt32BE(1),
-          buffer.readUInt32BE(5), buffer.slice(9))
+        buffer.readUInt32BE(5), buffer.slice(9))
     case 8:
       return this._onCancel(buffer.readUInt32BE(1),
-          buffer.readUInt32BE(5), buffer.readUInt32BE(9))
+        buffer.readUInt32BE(5), buffer.readUInt32BE(9))
     case 9:
       return this._onPort(buffer.readUInt16BE(1))
     case 20:
