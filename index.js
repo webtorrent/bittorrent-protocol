@@ -191,6 +191,7 @@ Wire.prototype.keepAlive = function () {
 Wire.prototype.handshake = function (infoHash, peerId, extensions) {
   var infoHashBuffer, peerIdBuffer
   if (typeof infoHash === 'string') {
+    infoHash = infoHash.toLowerCase()
     infoHashBuffer = Buffer.from(infoHash, 'hex')
   } else {
     infoHashBuffer = infoHash
