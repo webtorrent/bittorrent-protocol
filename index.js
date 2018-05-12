@@ -4,12 +4,16 @@ var arrayRemove = require('unordered-array-remove')
 var bencode = require('bencode')
 var BitField = require('bitfield')
 var Buffer = require('safe-buffer').Buffer
+var crypto = require('crypto')
 var debug = require('debug')('bittorrent-protocol')
 var extend = require('xtend')
 var inherits = require('inherits')
 var randombytes = require('randombytes')
+var sha1 = require('simple-sha1')
 var speedometer = require('speedometer')
 var stream = require('readable-stream')
+var xor = require('buffer-xor')
+var RC4 = require('rc4')
 
 var BITFIELD_GROW = 400000
 var KEEP_ALIVE_TIMEOUT = 55000
@@ -24,6 +28,12 @@ var MESSAGE_UNINTERESTED = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x03])
 var MESSAGE_RESERVED = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 var MESSAGE_PORT = [0x00, 0x00, 0x00, 0x03, 0x09, 0x00, 0x00]
 
+var DH_PRIME = 'ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a63a36210000000000090563'
+var DH_GENERATOR = 2
+var VC = Buffer.from([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
+var CRYPTO_PROVIDE = Buffer.from([0x00, 0x00, 0x01, 0x02])
+var CRYPTO_SELECT = Buffer.from([0x00, 0x00, 0x00, 0x02]) // always try to choose RC4 encryption instead of plaintext
+
 function Request (piece, offset, length, callback) {
   this.piece = piece
   this.offset = offset
@@ -33,7 +43,7 @@ function Request (piece, offset, length, callback) {
 
 inherits(Wire, stream.Duplex)
 
-function Wire () {
+function Wire (type = null, retries = 0, peEnabled = false) {
   if (!(this instanceof Wire)) return new Wire()
   stream.Duplex.call(this)
 
@@ -42,7 +52,7 @@ function Wire () {
 
   this.peerId = null // remote peer id (hex string)
   this.peerIdBuffer = null // remote peer id (buffer)
-  this.type = null // connection type ('webrtc', 'tcpIncoming', 'tcpOutgoing', 'webSeed')
+  this.type = type // connection type ('webrtc', 'tcpIncoming', 'tcpOutgoing', 'webSeed')
 
   this.amChoking = true // are we choking the peer?
   this.amInterested = false // are we interested in the peer?
@@ -53,7 +63,7 @@ function Wire () {
   // The largest torrent that I know of (the Geocities archive) is ~641 GB and has
   // ~41,000 pieces. Therefore, cap bitfield to 10x larger (400,000 bits) to support all
   // possible torrents but prevent malicious peers from growing bitfield to fill memory.
-  this.peerPieces = new BitField(0, { grow: BITFIELD_GROW })
+  this.peerPieces = new BitField(0, {grow: BITFIELD_GROW})
 
   this.peerExtensions = {}
 
@@ -90,9 +100,33 @@ function Wire () {
   this._buffer = [] // incomplete message data
   this._bufferSize = 0 // cached total length of buffers in `this._buffer`
 
-  this.on('finish', this._onFinish)
+  this._peEnabled = peEnabled
+  this._dh = crypto.createDiffieHellman(DH_PRIME, 'hex', DH_GENERATOR) // crypto object used to generate keys/secret
+  this._myPubKey = this._dh.generateKeys('hex') // my DH public key
+  this._peerPubKey = null // peer's DH public key
+  this._sharedSecret = null // shared DH secret
+  this._peerCryptoProvide = [] // encryption methods provided by peer; we expect this to always contain 0x02
+  this._cryptoHandshakeDone = false
 
-  this._parseHandshake()
+  this._cryptoSyncPattern = null // the pattern to search for when resynchronizing after receiving pe1/pe2
+  this._waitMaxBytes = null // the maximum number of bytes resynchronization must occur within
+  this._encryptionMethod = null // 1 for plaintext, 2 for RC4
+  this._encryptGenerator = null // RC4 keystream generator for encryption
+  this._decryptGenerator = null // RC4 keystream generator for decryption
+  this._setGenerators = false // a flag for whether setEncrypt() has successfully completed
+
+  this.on('finish', this._onFinish)
+  this._debug('type:', this.type)
+
+  if (this.type === 'tcpIncoming' && this._peEnabled) {
+    // If we are not the initiator, we should wait to see if the client begins
+    // with PE/MSE handshake or the standard bittorrent handshake.
+    this._determineHandshakeType()
+  } else if (this.type === 'tcpOutgoing' && this._peEnabled && retries === 0) {
+    this._parsePe2()
+  } else {
+    this._parseHandshake(null)
+  }
 }
 
 /**
@@ -182,6 +216,58 @@ Wire.prototype.keepAlive = function () {
   this._push(MESSAGE_KEEP_ALIVE)
 }
 
+Wire.prototype.sendPe1 = function () {
+  var padALen = Math.floor(Math.random() * 513)
+  var padA = randombytes(padALen)
+  this._push(Buffer.concat([Buffer.from(this._myPubKey, 'hex'), padA]))
+}
+
+Wire.prototype.sendPe2 = function () {
+  var padBLen = Math.floor(Math.random() * 513)
+  var padB = randombytes(padBLen)
+  this._push(Buffer.concat([Buffer.from(this._myPubKey, 'hex'), padB]))
+}
+
+Wire.prototype.sendPe3 = function (infoHash) {
+  this.setEncrypt(this._sharedSecret, infoHash)
+
+  var hash1Buffer = Buffer.from(sha1.sync(Buffer.from(this._utfToHex('req1') + this._sharedSecret, 'hex')), 'hex')
+
+  var hash2Buffer = Buffer.from(sha1.sync(Buffer.from(this._utfToHex('req2') + infoHash, 'hex')), 'hex')
+  var hash3Buffer = Buffer.from(sha1.sync(Buffer.from(this._utfToHex('req3') + this._sharedSecret, 'hex')), 'hex')
+  var hashesXorBuffer = xor(hash2Buffer, hash3Buffer)
+
+  var padCLen = randombytes(2).readUInt16BE(0) % 512
+  var padCBuffer = randombytes(padCLen)
+
+  var vcAndProvideBuffer = Buffer.alloc(8 + 4 + 2 + padCLen + 2)
+  VC.copy(vcAndProvideBuffer)
+  CRYPTO_PROVIDE.copy(vcAndProvideBuffer, 8)
+
+  vcAndProvideBuffer.writeInt16BE(padCLen, 12) // pad C length
+  padCBuffer.copy(vcAndProvideBuffer, 14)
+  vcAndProvideBuffer.writeInt16BE(0, 14 + padCLen) // IA length
+  vcAndProvideBuffer = this._encryptHandshake(vcAndProvideBuffer)
+
+  this._push(Buffer.concat([hash1Buffer, hashesXorBuffer, vcAndProvideBuffer]))
+}
+
+Wire.prototype.sendPe4 = function (infoHash) {
+  this.setEncrypt(this._sharedSecret, infoHash)
+
+  var padDLen = randombytes(2).readUInt16BE(0) % 512
+  var padDBuffer = randombytes(padDLen)
+  var vcAndSelectBuffer = Buffer.alloc(8 + 4 + 2 + padDLen)
+  VC.copy(vcAndSelectBuffer)
+  CRYPTO_SELECT.copy(vcAndSelectBuffer, 8)
+  vcAndSelectBuffer.writeInt16BE(padDLen, 12) // lenD?
+  padDBuffer.copy(vcAndSelectBuffer, 14)
+  vcAndSelectBuffer = this._encryptHandshake(vcAndSelectBuffer)
+  this._push(vcAndSelectBuffer)
+  this._cryptoHandshakeDone = true
+  this._debug('completed crypto handshake')
+}
+
 /**
  * Message: "handshake" <pstrlen><pstr><reserved><info_hash><peer_id>
  * @param  {Buffer|string} infoHash (as Buffer or *hex* string)
@@ -202,6 +288,8 @@ Wire.prototype.handshake = function (infoHash, peerId, extensions) {
     peerIdBuffer = peerId
     peerId = peerIdBuffer.toString('hex')
   }
+
+  this._infoHash = infoHashBuffer
 
   if (infoHashBuffer.length !== 20 || peerIdBuffer.length !== 20) {
     throw new Error('infoHash and peerId MUST have length 20')
@@ -389,6 +477,67 @@ Wire.prototype.extended = function (ext, obj) {
 }
 
 /**
+ * Sets the encryption method for this wire, as per PSE/ME specification
+ *
+ * @param {string} sharedSecret:  A hex-encoded string, which is the shared secret agreed
+ *                                upon from DH key exchange
+ * @returns boolean, true if encryption setting succeeds, false if it fails.
+ */
+Wire.prototype.setEncrypt = function (sharedSecret, infoHash) {
+  var encryptKey
+  var decryptKey
+  var encryptKeyBuf
+  var encryptKeyIntArray
+  var decryptKeyBuf
+  var decryptKeyIntArray
+  switch (this.type) {
+    case 'tcpIncoming':
+      encryptKey = sha1.sync(Buffer.from(this._utfToHex('keyB') + sharedSecret + infoHash, 'hex'))
+      decryptKey = sha1.sync(Buffer.from(this._utfToHex('keyA') + sharedSecret + infoHash, 'hex'))
+      encryptKeyBuf = Buffer.from(encryptKey, 'hex')
+      encryptKeyIntArray = []
+      for (const value of encryptKeyBuf.values()) {
+        encryptKeyIntArray.push(value)
+      }
+      decryptKeyBuf = Buffer.from(decryptKey, 'hex')
+      decryptKeyIntArray = []
+      for (const value of decryptKeyBuf.values()) {
+        decryptKeyIntArray.push(value)
+      }
+      this._encryptGenerator = new RC4(encryptKeyIntArray)
+      this._decryptGenerator = new RC4(decryptKeyIntArray)
+      break
+    case 'tcpOutgoing':
+      encryptKey = sha1.sync(Buffer.from(this._utfToHex('keyA') + sharedSecret + infoHash, 'hex'))
+      decryptKey = sha1.sync(Buffer.from(this._utfToHex('keyB') + sharedSecret + infoHash, 'hex'))
+      encryptKeyBuf = Buffer.from(encryptKey, 'hex')
+      encryptKeyIntArray = []
+      for (const value of encryptKeyBuf.values()) {
+        encryptKeyIntArray.push(value)
+      }
+      decryptKeyBuf = Buffer.from(decryptKey, 'hex')
+      decryptKeyIntArray = []
+      for (const value of decryptKeyBuf.values()) {
+        decryptKeyIntArray.push(value)
+      }
+      this._encryptGenerator = new RC4(encryptKeyIntArray)
+      this._decryptGenerator = new RC4(decryptKeyIntArray)
+      break
+    default:
+      return false
+  }
+
+  // Discard the first 1024 bytes, as per MSE/PE implementation
+  for (var i = 0; i < 1024; i++) {
+    this._encryptGenerator.randomByte()
+    this._decryptGenerator.randomByte()
+  }
+
+  this._setGenerators = true
+  return true
+}
+
+/**
  * Duplex stream method. Called whenever the remote peer stream wants data. No-op
  * since we'll just push data whenever we get it.
  */
@@ -406,13 +555,15 @@ Wire.prototype._message = function (id, numbers, data) {
   for (var i = 0; i < numbers.length; i++) {
     buffer.writeUInt32BE(numbers[i], 5 + (4 * i))
   }
-
   this._push(buffer)
   if (data) this._push(data)
 }
 
 Wire.prototype._push = function (data) {
   if (this._finished) return
+  if (this._encryptionMethod === 2 && this._cryptoHandshakeDone) {
+    data = this._encrypt(data)
+  }
   return this.push(data)
 }
 
@@ -423,6 +574,56 @@ Wire.prototype._push = function (data) {
 Wire.prototype._onKeepAlive = function () {
   this._debug('got keep-alive')
   this.emit('keep-alive')
+}
+
+Wire.prototype._onPe1 = function (pubKeyBuffer) {
+  this._peerPubKey = pubKeyBuffer.toString('hex')
+  this._sharedSecret = this._dh.computeSecret(this._peerPubKey, 'hex', 'hex')
+  this.emit('pe1')
+}
+
+Wire.prototype._onPe2 = function (pubKeyBuffer) {
+  this._peerPubKey = pubKeyBuffer.toString('hex')
+  this._sharedSecret = this._dh.computeSecret(this._peerPubKey, 'hex', 'hex')
+  this.emit('pe2')
+}
+
+Wire.prototype._onPe3 = function (hashesXorBuffer) {
+  var hash3 = sha1.sync(Buffer.from(this._utfToHex('req3') + this._sharedSecret, 'hex'))
+  var sKeyHash = xor(hashesXorBuffer, Buffer.from(hash3, 'hex')).toString('hex')
+  this.emit('pe3', sKeyHash)
+}
+
+Wire.prototype._onPe3Encrypted = function (vcBuffer, peerProvideBuffer, padCBuffer, iaBuffer) {
+  var self = this
+  if (!vcBuffer.equals(VC)) {
+    self._debug('Error: verification constant did not match')
+    self.destroy()
+    return
+  }
+
+  for (const provideByte of peerProvideBuffer.values()) {
+    if (provideByte !== 0) {
+      this._peerCryptoProvide.push(provideByte)
+    }
+  }
+  if (this._peerCryptoProvide.includes(2)) {
+    this._encryptionMethod = 2
+  } else {
+    self._debug('Error: RC4 encryption method not provided by peer')
+    self.destroy()
+  }
+}
+
+Wire.prototype._onPe4 = function (peerSelectBuffer) {
+  this._encryptionMethod = peerSelectBuffer.readUInt8(3)
+  if (!CRYPTO_PROVIDE.includes(this._encryptionMethod)) {
+    this._debug('Error: peer selected invalid crypto method')
+    this.destroy()
+  }
+  this._cryptoHandshakeDone = true
+  this._debug('crypto handshake done')
+  this.emit('pe4')
 }
 
 Wire.prototype._onHandshake = function (infoHashBuffer, peerIdBuffer, extensions) {
@@ -443,7 +644,7 @@ Wire.prototype._onHandshake = function (infoHashBuffer, peerIdBuffer, extensions
   }
 
   if (extensions.extended && this._handshakeSent &&
-      !this._extendedHandshakeSent) {
+    !this._extendedHandshakeSent) {
     // outgoing connection
     this._sendExtendedHandshake()
   }
@@ -581,18 +782,37 @@ Wire.prototype._onTimeout = function () {
  * @param  {function} cb
  */
 Wire.prototype._write = function (data, encoding, cb) {
-  this._bufferSize += data.length
-  this._buffer.push(data)
+  var self = this
 
-  while (this._bufferSize >= this._parserSize) {
-    var buffer = (this._buffer.length === 1)
-      ? this._buffer[0]
-      : Buffer.concat(this._buffer)
-    this._bufferSize -= this._parserSize
-    this._buffer = this._bufferSize
-      ? [buffer.slice(this._parserSize)]
+  if (self._encryptionMethod === 2 && self._cryptoHandshakeDone) {
+    data = self._decrypt(data)
+  }
+  self._bufferSize += data.length
+  self._buffer.push(data)
+  if (self._buffer.length > 1) {
+    self._buffer = [Buffer.concat(self._buffer)]
+  }
+  // now self._buffer is an array containing a single Buffer
+  if (self._cryptoSyncPattern) {
+    const index = self._buffer[0].indexOf(self._cryptoSyncPattern)
+    if (index !== -1) {
+      self._buffer[0] = self._buffer[0].slice(index + self._cryptoSyncPattern.length)
+      self._bufferSize -= (index + self._cryptoSyncPattern.length)
+      self._cryptoSyncPattern = null
+    } else if (self._bufferSize + data.length > self._waitMaxBytes + self._cryptoSyncPattern.length) {
+      self._debug('Error: could not resynchronize')
+      self.destroy()
+      return
+    }
+  }
+
+  while (self._bufferSize >= self._parserSize && !self._cryptoSyncPattern) {
+    var buffer = self._buffer[0]
+    self._bufferSize -= self._parserSize
+    self._buffer = self._bufferSize
+      ? [buffer.slice(self._parserSize)]
       : []
-    this._parser(buffer.slice(0, this._parserSize))
+    self._parser(buffer.slice(0, self._parserSize))
   }
 
   cb(null) // Signal that we're ready for more data
@@ -634,6 +854,11 @@ Wire.prototype._updateTimeout = function () {
 Wire.prototype._parse = function (size, parser) {
   this._parserSize = size
   this._parser = parser
+}
+
+Wire.prototype._parseUntil = function (pattern, maxBytes) {
+  this._cryptoSyncPattern = pattern
+  this._waitMaxBytes = maxBytes
 }
 
 /**
@@ -689,25 +914,126 @@ Wire.prototype._onMessage = function (buffer) {
   }
 }
 
+Wire.prototype._determineHandshakeType = function () {
+  var self = this
+  self._parse(1, function (pstrLenBuffer) {
+    var pstrlen = pstrLenBuffer.readUInt8(0)
+    if (pstrlen === 19) {
+      self._parse(pstrlen + 48, self._onHandshakeBuffer)
+    } else {
+      this._parsePe1(pstrLenBuffer)
+    }
+  })
+}
+
+Wire.prototype._parsePe1 = function (pubKeyPrefix) {
+  var self = this
+  self._parse(95, function (pubKeySuffix) {
+    self._onPe1(Buffer.concat([pubKeyPrefix, pubKeySuffix]))
+    self._parsePe3()
+  })
+}
+
+Wire.prototype._parsePe2 = function () {
+  var self = this
+  self._parse(96, function (pubKey) {
+    self._onPe2(pubKey)
+    while (!self._setGenerators) {
+      // Wait until generators have been set
+    }
+    self._parsePe4()
+  })
+}
+
+// Handles the unencrypted portion of step 4
+Wire.prototype._parsePe3 = function () {
+  var self = this
+  var hash1Buffer = Buffer.from(sha1.sync(Buffer.from(this._utfToHex('req1') + this._sharedSecret, 'hex')), 'hex')
+  // synchronize on HASH('req1', S)
+  self._parseUntil(hash1Buffer, 512)
+  self._parse(20, function (buffer) {
+    self._onPe3(buffer)
+    while (!self._setGenerators) {
+      // Wait until generators have been set
+    }
+    self._parsePe3Encrypted()
+  })
+}
+
+Wire.prototype._parsePe3Encrypted = function () {
+  var self = this
+  self._parse(14, function (buffer) {
+    var vcBuffer = self._decryptHandshake(buffer.slice(0, 8))
+    var peerProvideBuffer = self._decryptHandshake(buffer.slice(8, 12))
+    var padCLen = self._decryptHandshake(buffer.slice(12, 14)).readUInt16BE(0)
+    self._parse(padCLen, function (padCBuffer) {
+      padCBuffer = self._decryptHandshake(padCBuffer)
+      self._parse(2, function (iaLenBuf) {
+        var iaLen = self._decryptHandshake(iaLenBuf).readUInt16BE(0)
+        self._parse(iaLen, function (iaBuffer) {
+          iaBuffer = self._decryptHandshake(iaBuffer)
+          self._onPe3Encrypted(vcBuffer, peerProvideBuffer, padCBuffer, iaBuffer)
+          var pstrlen = iaLen ? iaBuffer.readUInt8(0) : null
+          var protocol = iaLen ? iaBuffer.slice(1, 20) : null
+          if (pstrlen === 19 && protocol.toString() === 'BitTorrent protocol') {
+            self._onHandshakeBuffer(iaBuffer.slice(1))
+          } else {
+            self._parseHandshake()
+          }
+        })
+      })
+    })
+  })
+}
+
+Wire.prototype._parsePe4 = function () {
+  var self = this
+  // synchronize on ENCRYPT(VC).
+  // since we encrypt using bitwise xor, decryption and encryption are the same operation.
+  // calling _decryptHandshake here advances the decrypt generator keystream forward 8 bytes
+  var vcBufferEncrypted = self._decryptHandshake(VC)
+  self._parseUntil(vcBufferEncrypted, 512)
+  self._parse(6, function (buffer) {
+    var peerSelectBuffer = self._decryptHandshake(buffer.slice(0, 4))
+    var padDLen = self._decryptHandshake(buffer.slice(4, 6)).readUInt16BE(0)
+    self._parse(padDLen, function (padDBuf) {
+      self._decryptHandshake(padDBuf)
+      self._onPe4(peerSelectBuffer)
+      self._parseHandshake(null)
+    })
+  })
+}
+
+/**
+ * Reads the handshake as specified by the bittorrent wire protocol.
+ */
 Wire.prototype._parseHandshake = function () {
   var self = this
   self._parse(1, function (buffer) {
     var pstrlen = buffer.readUInt8(0)
-    self._parse(pstrlen + 48, function (handshake) {
-      var protocol = handshake.slice(0, pstrlen)
-      if (protocol.toString() !== 'BitTorrent protocol') {
-        self._debug('Error: wire not speaking BitTorrent protocol (%s)', protocol.toString())
-        self.end()
-        return
-      }
-      handshake = handshake.slice(pstrlen)
-      self._onHandshake(handshake.slice(8, 28), handshake.slice(28, 48), {
-        dht: !!(handshake[7] & 0x01), // see bep_0005
-        extended: !!(handshake[5] & 0x10) // see bep_0010
-      })
-      self._parse(4, self._onMessageLength)
-    })
+    if (pstrlen !== 19) {
+      self._debug('Error: wire not speaking BitTorrent protocol (%s)', pstrlen.toString())
+      self.end()
+      return
+    }
+    self._parse(pstrlen + 48, self._onHandshakeBuffer)
   })
+}
+
+Wire.prototype._onHandshakeBuffer = function (handshake) {
+  var self = this
+  var protocol = handshake.slice(0, 19)
+  if (protocol.toString() !== 'BitTorrent protocol') {
+    self._debug('Error: wire not speaking BitTorrent protocol (%s)', protocol.toString())
+    self.end()
+    return
+  }
+  handshake = handshake.slice(19)
+  self._onHandshake(handshake.slice(8, 28), handshake.slice(28, 48), {
+    dht: !!(handshake[7] & 0x01), // see bep_0005
+    extended: !!(handshake[5] & 0x10) // see bep_0010
+  })
+  self._parse(4, self._onMessageLength)
 }
 
 Wire.prototype._onFinish = function () {
@@ -741,4 +1067,66 @@ function pull (requests, piece, offset, length) {
     }
   }
   return null
+}
+
+Wire.prototype._encryptHandshake = function (buf) {
+  var crypt = Buffer.from(buf)
+  if (!this._encryptGenerator) {
+    this._debug('Warning: Encrypting without any generator')
+    return crypt
+  }
+
+  for (var i = 0; i < buf.length; i++) {
+    var keystream = this._encryptGenerator.randomByte()
+    crypt[i] = crypt[i] ^ keystream
+  }
+
+  return crypt
+}
+
+Wire.prototype._encrypt = function (buf) {
+  var crypt = Buffer.from(buf)
+
+  if (!this._encryptGenerator || this._encryptionMethod !== 2) {
+    return crypt
+  }
+  for (var i = 0; i < buf.length; i++) {
+    var keystream = this._encryptGenerator.randomByte()
+    crypt[i] = crypt[i] ^ keystream
+  }
+
+  return crypt
+}
+
+Wire.prototype._decryptHandshake = function (buf) {
+  var decrypt = Buffer.from(buf)
+
+  if (!this._decryptGenerator) {
+    this._debug('Warning: Decrypting without any generator')
+    return decrypt
+  }
+  for (var i = 0; i < buf.length; i++) {
+    var keystream = this._decryptGenerator.randomByte()
+    decrypt[i] = decrypt[i] ^ keystream
+  }
+
+  return decrypt
+}
+
+Wire.prototype._decrypt = function (buf) {
+  var decrypt = Buffer.from(buf)
+
+  if (!this._decryptGenerator || this._encryptionMethod !== 2) {
+    return decrypt
+  }
+  for (var i = 0; i < buf.length; i++) {
+    var keystream = this._decryptGenerator.randomByte()
+    decrypt[i] = decrypt[i] ^ keystream
+  }
+
+  return decrypt
+}
+
+Wire.prototype._utfToHex = function (str) {
+  return Buffer.from(str, 'utf8').toString('hex')
 }
