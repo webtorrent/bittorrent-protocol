@@ -807,12 +807,17 @@ Wire.prototype._write = function (data, encoding, cb) {
   }
 
   while (self._bufferSize >= self._parserSize && !self._cryptoSyncPattern) {
-    var buffer = self._buffer[0]
-    self._bufferSize -= self._parserSize
-    self._buffer = self._bufferSize
-      ? [buffer.slice(self._parserSize)]
-      : []
-    self._parser(buffer.slice(0, self._parserSize))
+    if (self._parserSize === 0) {
+      self._parser(Buffer.from([]))
+    } else {
+      var buffer = self._buffer[0]
+      // console.log('buffer:', self._buffer)
+      self._bufferSize -= self._parserSize
+      self._buffer = self._bufferSize
+        ? [buffer.slice(self._parserSize)]
+        : []
+      self._parser(buffer.slice(0, self._parserSize))
+    }
   }
 
   cb(null) // Signal that we're ready for more data
