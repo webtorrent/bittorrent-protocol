@@ -1,14 +1,14 @@
-var Protocol = require('../')
-var test = require('tape')
+const Protocol = require('../')
+const test = require('tape')
 
-test('Handshake', function (t) {
+test('Handshake', t => {
   t.plan(4)
 
-  var wire = new Protocol()
-  wire.on('error', function (err) { t.fail(err) })
+  const wire = new Protocol()
+  wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
 
-  wire.on('handshake', function (infoHash, peerId) {
+  wire.on('handshake', (infoHash, peerId) => {
     t.equal(Buffer.from(infoHash, 'hex').length, 20)
     t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
     t.equal(Buffer.from(peerId, 'hex').length, 20)
@@ -18,14 +18,14 @@ test('Handshake', function (t) {
   wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 })
 
-test('Handshake (with string args)', function (t) {
+test('Handshake (with string args)', t => {
   t.plan(4)
 
-  var wire = new Protocol()
-  wire.on('error', function (err) { t.fail(err) })
+  const wire = new Protocol()
+  wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
 
-  wire.on('handshake', function (infoHash, peerId) {
+  wire.on('handshake', (infoHash, peerId) => {
     t.equal(Buffer.from(infoHash, 'hex').length, 20)
     t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
     t.equal(Buffer.from(peerId, 'hex').length, 20)
@@ -35,22 +35,22 @@ test('Handshake (with string args)', function (t) {
   wire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
 })
 
-test('Asynchronous handshake + extended handshake', function (t) {
-  var eventLog = []
+test('Asynchronous handshake + extended handshake', t => {
+  const eventLog = []
 
-  var wire1 = new Protocol() // outgoing
-  var wire2 = new Protocol() // incoming
+  const wire1 = new Protocol() // outgoing
+  const wire2 = new Protocol() // incoming
   wire1.pipe(wire2).pipe(wire1)
-  wire1.on('error', function (err) { t.fail(err) })
-  wire2.on('error', function (err) { t.fail(err) })
+  wire1.on('error', err => { t.fail(err) })
+  wire2.on('error', err => { t.fail(err) })
 
-  wire1.on('handshake', function (infoHash, peerId, extensions) {
+  wire1.on('handshake', (infoHash, peerId, extensions) => {
     eventLog.push('w1 hs')
     t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
     t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
     t.equal(extensions.extended, true)
   })
-  wire1.on('extended', function (ext, obj) {
+  wire1.on('extended', (ext, obj) => {
     if (ext === 'handshake') {
       eventLog.push('w1 ex')
       t.ok(obj)
@@ -61,18 +61,18 @@ test('Asynchronous handshake + extended handshake', function (t) {
     }
   })
 
-  wire2.on('handshake', function (infoHash, peerId, extensions) {
+  wire2.on('handshake', (infoHash, peerId, extensions) => {
     eventLog.push('w2 hs')
     t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
     t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
     t.equal(extensions.extended, true)
 
     // Respond asynchronously
-    process.nextTick(function () {
+    process.nextTick(() => {
       wire2.handshake(infoHash, peerId)
     })
   })
-  wire2.on('extended', function (ext, obj) {
+  wire2.on('extended', (ext, obj) => {
     if (ext === 'handshake') {
       eventLog.push('w2 ex')
       t.ok(obj)
@@ -82,18 +82,18 @@ test('Asynchronous handshake + extended handshake', function (t) {
   wire1.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
 })
 
-test('Unchoke', function (t) {
+test('Unchoke', t => {
   t.plan(4)
 
-  var wire = new Protocol()
-  wire.on('error', function (err) { t.fail(err) })
+  const wire = new Protocol()
+  wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
   wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
   t.ok(wire.amChoking)
   t.ok(wire.peerChoking)
 
-  wire.on('unchoke', function () {
+  wire.on('unchoke', () => {
     t.ok(!wire.peerChoking)
   })
 
@@ -101,18 +101,18 @@ test('Unchoke', function (t) {
   t.ok(!wire.amChoking)
 })
 
-test('Interested', function (t) {
+test('Interested', t => {
   t.plan(4)
 
-  var wire = new Protocol()
-  wire.on('error', function (err) { t.fail(err) })
+  const wire = new Protocol()
+  wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
   wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
   t.ok(!wire.amInterested)
   t.ok(!wire.peerInterested)
 
-  wire.on('interested', function () {
+  wire.on('interested', () => {
     t.ok(wire.peerInterested)
   })
 
@@ -120,18 +120,18 @@ test('Interested', function (t) {
   t.ok(wire.amInterested)
 })
 
-test('Request a piece', function (t) {
+test('Request a piece', t => {
   t.plan(12)
 
-  var wire = new Protocol()
-  wire.on('error', function (err) { t.fail(err) })
+  const wire = new Protocol()
+  wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
   wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
   t.equal(wire.requests.length, 0)
   t.equal(wire.peerRequests.length, 0)
 
-  wire.on('request', function (i, offset, length, callback) {
+  wire.on('request', (i, offset, length, callback) => {
     t.equal(wire.requests.length, 1)
     t.equal(wire.peerRequests.length, 1)
     t.equal(i, 0)
@@ -140,9 +140,9 @@ test('Request a piece', function (t) {
     callback(null, Buffer.from('hello world'))
   })
 
-  wire.once('unchoke', function () {
+  wire.once('unchoke', () => {
     t.equal(wire.requests.length, 0)
-    wire.request(0, 1, 11, function (err, buffer) {
+    wire.request(0, 1, 11, (err, buffer) => {
       t.equal(wire.requests.length, 0)
       t.ok(!err)
       t.equal(buffer.toString(), 'hello world')
@@ -153,27 +153,27 @@ test('Request a piece', function (t) {
   wire.unchoke()
 })
 
-test('No duplicate `have` events for same piece', function (t) {
+test('No duplicate `have` events for same piece', t => {
   t.plan(6)
 
-  var wire = new Protocol()
-  wire.on('error', function (err) { t.fail(err) })
+  const wire = new Protocol()
+  wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
 
   wire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
 
-  var haveEvents = 0
-  wire.on('have', function () {
+  let haveEvents = 0
+  wire.on('have', () => {
     haveEvents += 1
   })
   t.equal(haveEvents, 0)
   t.equal(!!wire.peerPieces.get(0), false)
   wire.have(0)
-  process.nextTick(function () {
+  process.nextTick(() => {
     t.equal(haveEvents, 1, 'emitted event for new piece')
     t.equal(!!wire.peerPieces.get(0), true)
     wire.have(0)
-    process.nextTick(function () {
+    process.nextTick(() => {
       t.equal(haveEvents, 1, 'not emitted event for preexisting piece')
       t.equal(!!wire.peerPieces.get(0), true)
     })

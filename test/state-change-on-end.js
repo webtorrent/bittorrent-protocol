@@ -1,11 +1,11 @@
-var Protocol = require('../')
-var test = require('tape')
+const Protocol = require('../')
+const test = require('tape')
 
-test('State changes correctly on wire \'end\'', function (t) {
+test('State changes correctly on wire \'end\'', t => {
   t.plan(11)
 
-  var wire = new Protocol()
-  wire.on('error', function (err) { t.fail(err) })
+  const wire = new Protocol()
+  wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
 
   wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
@@ -13,31 +13,31 @@ test('State changes correctly on wire \'end\'', function (t) {
   t.ok(wire.amChoking)
   t.ok(wire.peerChoking)
 
-  wire.on('unchoke', function () {
+  wire.on('unchoke', () => {
     t.ok(!wire.amChoking)
     t.ok(!wire.peerChoking)
     wire.interested()
   })
 
-  wire.on('interested', function () {
+  wire.on('interested', () => {
     t.ok(wire.peerInterested)
     destroy()
   })
 
   function destroy () {
-    wire.on('choke', function () {
+    wire.on('choke', () => {
       t.pass('wire got choke event')
     })
-    wire.on('uninterested', function () {
+    wire.on('uninterested', () => {
       t.pass('wire got uninterested event')
     })
 
-    wire.on('end', function () {
+    wire.on('end', () => {
       t.ok(wire.peerChoking)
       t.ok(!wire.peerInterested)
     })
 
-    wire.on('finish', function () {
+    wire.on('finish', () => {
       t.ok(wire.peerChoking)
       t.ok(!wire.peerInterested)
     })

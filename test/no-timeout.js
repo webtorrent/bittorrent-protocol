@@ -1,35 +1,35 @@
-var Protocol = require('../')
-var test = require('tape')
+const Protocol = require('../')
+const test = require('tape')
 
-test('No timeout when peer is good', function (t) {
+test('No timeout when peer is good', t => {
   t.plan(3)
 
-  var wire = new Protocol()
-  wire.on('error', function (err) { t.fail(err) })
+  const wire = new Protocol()
+  wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
   wire.setTimeout(1000)
   wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
-  wire.on('unchoke', function () {
-    wire.request(0, 0, 11, function (err) {
+  wire.on('unchoke', () => {
+    wire.request(0, 0, 11, err => {
       t.error(err)
     })
 
-    wire.request(0, 0, 11, function (err) {
+    wire.request(0, 0, 11, err => {
       t.error(err)
     })
 
-    wire.request(0, 0, 11, function (err) {
+    wire.request(0, 0, 11, err => {
       t.error(err)
     })
   })
 
-  wire.on('request', function (i, offset, length, callback) {
+  wire.on('request', (i, offset, length, callback) => {
     callback(null, Buffer.from('hello world'))
   })
 
   // there should never be a timeout
-  wire.on('timeout', function () {
+  wire.on('timeout', () => {
     t.fail('Timed out')
   })
 
