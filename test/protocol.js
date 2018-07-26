@@ -1,4 +1,3 @@
-var Buffer = require('safe-buffer').Buffer
 var Protocol = require('../')
 var test = require('tape')
 

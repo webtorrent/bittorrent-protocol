@@ -16,7 +16,6 @@
     "debug": "^3.1.0",
     "randombytes": "^2.0.5",
     "readable-stream": "^2.3.2",
-    "safe-buffer": "^5.1.1",
     "speedometer": "^1.0.0",
     "unordered-array-remove": "^1.0.2",
     "xtend": "^4.0.0"
