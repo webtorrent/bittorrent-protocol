@@ -20,11 +20,13 @@ const MESSAGE_UNINTERESTED = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x03])
 const MESSAGE_RESERVED = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 const MESSAGE_PORT = [0x00, 0x00, 0x00, 0x03, 0x09, 0x00, 0x00]
 
-function Request (piece, offset, length, callback) {
-  this.piece = piece
-  this.offset = offset
-  this.length = length
-  this.callback = callback
+class Request {
+  constructor (piece, offset, length, callback) {
+    this.piece = piece
+    this.offset = offset
+    this.length = length
+    this.callback = callback
+  }
 }
 
 class Wire extends stream.Duplex {
