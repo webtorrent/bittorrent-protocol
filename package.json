@@ -21,7 +21,6 @@
     "xtend": "^4.0.0"
   },
   "devDependencies": {
-    "airtap": "0.1.0",
     "standard": "*",
     "tape": "^4.0.0"
   },
@@ -42,12 +41,6 @@
     "url": "git://github.com/webtorrent/bittorrent-protocol.git"
   },
   "scripts": {
-    "test": "standard && npm run test-node && npm run test-browser",
-    "test-browser": "airtap -- test/*.js",
-    "test-browser-local": "airtap --local -- test/*.js",
-    "test-node": "tape test/*.js"
-  },
-  "testling": {
-    "files": "test/*.js"
+    "test": "standard && tape test/*.js"
   }
 }

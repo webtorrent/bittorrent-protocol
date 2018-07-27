@@ -11,8 +11,6 @@
 
 ### Simple, robust, BitTorrent wire protocol implementation
 
-[![Sauce Test Status](https://saucelabs.com/browser-matrix/bittorrent-protocol.svg)](https://saucelabs.com/u/bittorrent-protocol)
-
 Node.js implementation of the [BitTorrent peer wire protocol](https://wiki.theory.org/BitTorrentSpecification#Peer_wire_protocol_.28TCP.29).
 The protocol is the main communication layer for BitTorrent file transfer.
 
