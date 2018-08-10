@@ -15,7 +15,7 @@
     "bitfield": "^2.0.0",
     "debug": "^3.1.0",
     "randombytes": "^2.0.5",
-    "readable-stream": "^2.3.2",
+    "readable-stream": "^3.0.0",
     "speedometer": "^1.0.0",
     "unordered-array-remove": "^1.0.2",
     "xtend": "^4.0.0"
