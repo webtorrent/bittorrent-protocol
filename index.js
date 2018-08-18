@@ -230,7 +230,7 @@ class Wire extends stream.Duplex {
    */
   _sendExtendedHandshake () {
     // Create extended message object from registered extensions
-    const msg = Object.assign(this.extendedHandshake)
+    const msg = Object.assign({}, this.extendedHandshake)
     msg.m = {}
     for (const ext in this.extendedMapping) {
       const name = this.extendedMapping[ext]
