@@ -1,7 +1,7 @@
 {
   "name": "bittorrent-protocol",
   "description": "Simple, robust, BitTorrent peer wire protocol implementation",
-  "version": "3.0.1",
+  "version": "3.1.0",
   "author": {
     "name": "WebTorrent, LLC",
     "email": "feross@webtorrent.io",
