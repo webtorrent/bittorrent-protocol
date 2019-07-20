@@ -2,7 +2,6 @@ const arrayRemove = require('unordered-array-remove')
 const bencode = require('bencode')
 const BitField = require('bitfield')
 const debug = require('debug')('bittorrent-protocol')
-const extend = require('xtend')
 const randombytes = require('randombytes')
 const speedometer = require('speedometer')
 const stream = require('readable-stream')
@@ -231,7 +230,7 @@ class Wire extends stream.Duplex {
    */
   _sendExtendedHandshake () {
     // Create extended message object from registered extensions
-    const msg = extend(this.extendedHandshake)
+    const msg = Object.assign({}, this.extendedHandshake)
     msg.m = {}
     for (const ext in this.extendedMapping) {
       const name = this.extendedMapping[ext]
