@@ -20,6 +20,7 @@
     "unordered-array-remove": "^1.0.2"
   },
   "devDependencies": {
+    "jest": "^24.9.0",
     "standard": "*",
     "tape": "^4.0.0"
   },
@@ -40,6 +41,7 @@
     "url": "git://github.com/webtorrent/bittorrent-protocol.git"
   },
   "scripts": {
-    "test": "standard && tape test/*.js"
+    "test": "standard && tape test/*.js",
+    "jest":"jest"
   }
 }
