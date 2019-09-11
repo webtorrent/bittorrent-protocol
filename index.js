@@ -85,7 +85,7 @@ class Wire extends stream.Duplex {
     this._buffer = [] // incomplete message data
     this._bufferSize = 0 // cached total length of buffers in `this._buffer`
 
-    this.on('finish', this._onFinish)
+    this.once('finish', () => this._onFinish())
 
     this._parseHandshake()
   }
