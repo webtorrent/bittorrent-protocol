@@ -64,7 +64,7 @@ test('Extension.onHandshake', (t) => {
 });
 
 test('Extension.onExtendedHandshake', (t) => {
-  t.plan(3);
+  t.plan(4);
 
   class TestExtension extends Extension {
     public name = 'test_extension';
