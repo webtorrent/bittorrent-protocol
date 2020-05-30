@@ -153,7 +153,7 @@ export default class Wire extends stream.Duplex {
    * @param {number} ms
    * @param {boolean=} unref (should the timer be unref'd? default: false)
    */
-  public setTimeout(ms: number, unref: boolean | undefined) {
+  public setTimeout(ms: number, unref?: boolean) {
     this._debug('setTimeout ms=%d unref=%s', ms, unref)
     this._clearTimeout()
     this._timeoutMs = ms
@@ -233,7 +233,7 @@ export default class Wire extends stream.Duplex {
    * @param  {Buffer|string} peerId
    * @param  {Object} extensions
    */
-  public handshake(infoHash: Buffer | string, peerId: Buffer | string, extensions: any) {
+  public handshake(infoHash: Buffer | string, peerId: Buffer | string, extensions?: any) {
     let infoHashBuffer
     let peerIdBuffer
     if (typeof infoHash === 'string') {

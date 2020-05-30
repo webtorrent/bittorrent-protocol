@@ -15,7 +15,7 @@ test('Handshake', t => {
     t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
   })
 
-  wire.handshake({ infoHash: { infoHash: Buffer.from('01234567890123456789'), peerId: Buffer.from('12345678901234567890') } })
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 })
 
 test('Handshake (with string args)', t => {
@@ -32,11 +32,11 @@ test('Handshake (with string args)', t => {
     t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
   })
 
-  wire.handshake({ infoHash: { infoHash: '3031323334353637383930313233343536373839', peerId: '3132333435363738393031323334353637383930' } })
+  wire.handshake('3031323334353637383930313233343536373839','3132333435363738393031323334353637383930')
 })
 
 test('Asynchronous handshake + extended handshake', t => {
-  const eventLog = []
+  const eventLog: string[] = []
 
   const wire1 = new Protocol() // outgoing
   const wire2 = new Protocol() // incoming
@@ -69,7 +69,7 @@ test('Asynchronous handshake + extended handshake', t => {
 
     // Respond asynchronously
     process.nextTick(() => {
-      wire2.handshake({ infoHash: { infoHash, peerId } })
+      wire2.handshake(infoHash, peerId)
     })
   })
   wire2.on('extended', (ext, obj) => {
@@ -79,7 +79,7 @@ test('Asynchronous handshake + extended handshake', t => {
     }
   })
 
-  wire1.handshake({ infoHash: { infoHash: '3031323334353637383930313233343536373839', peerId: '3132333435363738393031323334353637383930' } })
+  wire1.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
 })
 
 test('Unchoke', t => {
@@ -88,7 +88,7 @@ test('Unchoke', t => {
   const wire = new Protocol()
   wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
-  wire.handshake({ infoHash: { infoHash: Buffer.from('01234567890123456789'), peerId: Buffer.from('12345678901234567890') } })
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
   t.ok(wire.amChoking)
   t.ok(wire.peerChoking)
@@ -107,7 +107,7 @@ test('Interested', t => {
   const wire = new Protocol()
   wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
-  wire.handshake({ infoHash: { infoHash: Buffer.from('01234567890123456789'), peerId: Buffer.from('12345678901234567890') } })
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
   t.ok(!wire.amInterested)
   t.ok(!wire.peerInterested)
@@ -126,7 +126,7 @@ test('Request a piece', t => {
   const wire = new Protocol()
   wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
-  wire.handshake({ infoHash: { infoHash: Buffer.from('01234567890123456789'), peerId: Buffer.from('12345678901234567890') } })
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
 
   t.equal(wire.requests.length, 0)
   t.equal(wire.peerRequests.length, 0)
@@ -160,7 +160,7 @@ test('No duplicate `have` events for same piece', t => {
   wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
 
-  wire.handshake({ infoHash: { infoHash: '3031323334353637383930313233343536373839', peerId: '3132333435363738393031323334353637383930' } })
+  wire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930')
 
   let haveEvents = 0
   wire.on('have', () => {

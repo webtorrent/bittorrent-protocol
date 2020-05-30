@@ -50,6 +50,6 @@
     "url": "git://github.com/webtorrent/bittorrent-protocol.git"
   },
   "scripts": {
-    "test": "standard && ts-node node_modules/tape/bin/tape test/extension.ts"
+    "test": "standard && ts-node node_modules/tape/bin/tape test/*.ts"
   }
 }
