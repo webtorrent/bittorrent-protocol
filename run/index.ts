@@ -1,4 +1,4 @@
-import Wire from '../';
+import Wire from '../src/Wire';
 import { Extension, ExtendedHandshake, HandshakeExtensions } from '../src/Extension';
 import bencode from 'bencode';
 

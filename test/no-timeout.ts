@@ -1,4 +1,4 @@
-import Protocol from '../';
+import Protocol from '../src/Wire';
 
 import test from 'tape';
 

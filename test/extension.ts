@@ -1,4 +1,4 @@
-import Wire from '../';
+import Wire from '../src/Wire';
 import test from 'tape';
 import { Extension, HandshakeExtensions, ExtendedHandshake } from '../src/Extension';
 
