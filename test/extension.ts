@@ -9,6 +9,7 @@ test('Extension.prototype.name', (t) => {
 
   class NoNameExtension extends Extension {
     public name: string;
+    public requirePeer = false;
     public onHandshake: (infoHash: string, peerId: string, extensions: HandshakeExtensions) => void;
     public onExtendedHandshake: (handshake: ExtendedHandshake) => void;
     public onMessage: (buf: Buffer) => void;
@@ -20,6 +21,8 @@ test('Extension.prototype.name', (t) => {
 
   class NamedExtension extends Extension {
     public name = 'named_extension';
+    public requirePeer = false;
+
     public onHandshake: (infoHash: string, peerId: string, extensions: HandshakeExtensions) => void;
     public onExtendedHandshake: (handshake: ExtendedHandshake) => void;
     public onMessage: (buf: Buffer) => void;
@@ -35,6 +38,7 @@ test('Extension.onHandshake', (t) => {
 
   class TestExtension extends Extension {
     public name = 'test_extension';
+    public requirePeer = false;
 
     public onHandshake = (infoHash: string, peerId: string): void => {
       t.equal(Buffer.from(infoHash, 'hex').length, 20);
@@ -64,6 +68,7 @@ test('Extension.onExtendedHandshake', (t) => {
 
   class TestExtension extends Extension {
     public name = 'test_extension';
+    public requirePeer = false;
 
     constructor(wire: Wire) {
       super(wire);
@@ -104,6 +109,7 @@ test('Extension.onMessage', (t) => {
 
   class TestExtension extends Extension {
     public name = 'test_extension';
+    public requirePeer = false;
 
     public onMessage = (message: Buffer): void => {
       t.equal(message.toString(), 'hello world!', 'receives message sent with wire.extended()');

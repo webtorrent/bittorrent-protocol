@@ -74,11 +74,13 @@ export default class Wire extends stream.Duplex {
   public _buffer: Buffer[];
   public _bufferSize: number;
   public _timeoutUnref: unknown;
-  public _handshakeSent: unknown;
-  public _extendedHandshakeSent: unknown;
+  public _handshakeSent: boolean;
+  public _extendedHandshakeSent: boolean;
+  public wireName: string | undefined;
 
-  constructor() {
+  constructor(name?: string) {
     super();
+    this.wireName = name;
 
     this._debugId = randombytes(4).toString('hex');
     this._debug('new wire');

@@ -6,6 +6,7 @@ export type HandshakeExtensions = { [name: string]: boolean };
 interface IExtension {
   wire: Wire;
   name: string;
+  requirePeer: boolean;
 
   onHandshake: (infoHash: string, peerId: string, extensions: HandshakeExtensions) => void;
   onExtendedHandshake: (handshake: ExtendedHandshake) => void;
@@ -15,6 +16,7 @@ interface IExtension {
 export abstract class Extension implements IExtension {
   public wire: Wire;
   public abstract name: string;
+  public abstract requirePeer: boolean;
 
   constructor(wire: Wire) {
     this.wire = wire;
