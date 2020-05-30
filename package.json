@@ -20,8 +20,18 @@
     "unordered-array-remove": "^1.0.2"
   },
   "devDependencies": {
+    "@types/bencode": "^2.0.0",
+    "@types/node": "^13.13.5",
+    "@types/readable-stream": "^2.3.6",
+    "@types/tape": "^4.13.0",
+    "@typescript-eslint/eslint-plugin": "^2.29.0",
+    "@typescript-eslint/parser": "^2.29.0",
+    "eslint": "^7.1.0",
+    "eslint-config-prettier": "^6.11.0",
     "standard": "*",
-    "tape": "^4.0.0"
+    "tape": "^4.0.0",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.3"
   },
   "keywords": [
     "bittorrent",
@@ -40,6 +50,6 @@
     "url": "git://github.com/webtorrent/bittorrent-protocol.git"
   },
   "scripts": {
-    "test": "standard && tape test/*.js"
+    "test": "standard && ts-node node_modules/tape/bin/tape test/extension.ts"
   }
 }

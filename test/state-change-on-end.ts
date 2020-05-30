@@ -1,5 +1,5 @@
-const Protocol = require('../')
-const test = require('tape')
+import Protocol from '../'
+import test from 'tape'
 
 test('State changes correctly on wire \'end\'', t => {
   t.plan(11)
@@ -8,7 +8,7 @@ test('State changes correctly on wire \'end\'', t => {
   wire.on('error', err => { t.fail(err) })
   wire.pipe(wire)
 
-  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
+  wire.handshake({ infoHash: { infoHash: Buffer.from('01234567890123456789'), peerId: Buffer.from('12345678901234567890') } })
 
   t.ok(wire.amChoking)
   t.ok(wire.peerChoking)

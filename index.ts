@@ -1,10 +1,11 @@
-const arrayRemove = require('unordered-array-remove')
-const bencode = require('bencode')
-const BitField = require('bitfield')
+import arrayRemove from 'unordered-array-remove'
+import bencode from 'bencode'
+import BitField from 'bitfield'
 const debug = require('debug')('bittorrent-protocol')
-const randombytes = require('randombytes')
-const speedometer = require('speedometer')
-const stream = require('readable-stream')
+import randombytes from 'randombytes'
+import speedometer from 'speedometer'
+import stream from 'readable-stream'
+import { Extension } from './Extension'
 
 const BITFIELD_GROW = 400000
 const KEEP_ALIVE_TIMEOUT = 55000
@@ -19,8 +20,13 @@ const MESSAGE_UNINTERESTED = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x03])
 const MESSAGE_RESERVED = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 const MESSAGE_PORT = [0x00, 0x00, 0x00, 0x03, 0x09, 0x00, 0x00]
 
-class Request {
-  constructor (piece, offset, length, callback) {
+export class PieceRequest {
+  public piece: any;
+  public offset: any;
+  public length: any;
+  public callback: any;
+
+  constructor(piece, offset, length, callback) {
     this.piece = piece
     this.offset = offset
     this.length = length
@@ -28,8 +34,47 @@ class Request {
   }
 }
 
-class Wire extends stream.Duplex {
-  constructor () {
+export default class Wire extends stream.Duplex {
+  public _debugId: string;
+  public peerId: string | null;
+  public peerIdBuffer: any;
+  public type: any;
+  public amChoking: any;
+  public amInterested: any;
+  public peerChoking: any;
+  public peerInterested: any;
+  public peerPieces: any;
+  public peerExtensions: any;
+  public requests: any;
+  public peerRequests: any;
+  public extendedMapping: any;
+  public peerExtendedMapping: any;
+  public extendedHandshake: any;
+  public peerExtendedHandshake: any;
+  public _ext: any;
+  public _nextExt: any;
+  public uploaded: any;
+  public downloaded: any;
+  public uploadSpeed: any;
+  public downloadSpeed: any;
+  public _keepAliveInterval: any;
+  public _timeout: any;
+  public _timeoutMs: any;
+  public destroyed: any;
+  public _finished: any;
+  public _parserSize: any;
+  public _parser: any;
+  public _buffer: any;
+  public _bufferSize: any;
+  public once: any;
+  public _timeoutUnref: any;
+  public emit: any;
+  public _handshakeSent: any;
+  public _extendedHandshakeSent: any;
+  public push: any;
+  public read: any;
+
+  constructor() {
     super()
 
     this._debugId = randombytes(4).toString('hex')
@@ -94,7 +139,7 @@ class Wire extends stream.Duplex {
    * Set whether to send a "keep-alive" ping (sent every 55s)
    * @param {boolean} enable
    */
-  setKeepAlive (enable) {
+  public setKeepAlive(enable: boolean) {
     this._debug('setKeepAlive %s', enable)
     clearInterval(this._keepAliveInterval)
     if (enable === false) return
@@ -108,7 +153,7 @@ class Wire extends stream.Duplex {
    * @param {number} ms
    * @param {boolean=} unref (should the timer be unref'd? default: false)
    */
-  setTimeout (ms, unref) {
+  public setTimeout(ms: number, unref: boolean | undefined) {
     this._debug('setTimeout ms=%d unref=%s', ms, unref)
     this._clearTimeout()
     this._timeoutMs = ms
@@ -116,15 +161,19 @@ class Wire extends stream.Duplex {
     this._updateTimeout()
   }
 
-  destroy () {
-    if (this.destroyed) return
+  public destroy(err?: Error | undefined, callback?: ((error: Error | null) => void) | undefined) {
+    if (this.destroyed) {
+      return this;
+    }
+
     this.destroyed = true
     this._debug('destroy')
     this.emit('close')
     this.end()
+    return this;
   }
 
-  end (...args) {
+  public end(...args) {
     this._debug('end')
     this._onUninterested()
     this._onChoke()
@@ -135,17 +184,19 @@ class Wire extends stream.Duplex {
    * Use the specified protocol extension.
    * @param  {function} Extension
    */
-  use (Extension) {
-    const name = Extension.prototype.name
+  public use(newExtension: new(wire: Wire) => Extension) {
+    const ext = this._nextExt
+    const handler = new newExtension(this)
+
+    const name = handler.name
+    console.log("new Extension name", name)
     if (!name) {
-      throw new Error('Extension class requires a "name" property on the prototype')
+      throw new Error('Extension class requires a "name" property')
     }
+
     this._debug('use extension.name=%s', name)
 
-    const ext = this._nextExt
-    const handler = new Extension(this)
-
-    function noop () {}
+    function noop() { }
 
     if (typeof handler.onHandshake !== 'function') {
       handler.onHandshake = noop
@@ -171,7 +222,7 @@ class Wire extends stream.Duplex {
   /**
    * Message "keep-alive": <len=0000>
    */
-  keepAlive () {
+  public keepAlive() {
     this._debug('keep-alive')
     this._push(MESSAGE_KEEP_ALIVE)
   }
@@ -182,7 +233,7 @@ class Wire extends stream.Duplex {
    * @param  {Buffer|string} peerId
    * @param  {Object} extensions
    */
-  handshake (infoHash, peerId, extensions) {
+  public handshake(infoHash: Buffer | string, peerId: Buffer | string, extensions: any) {
     let infoHashBuffer
     let peerIdBuffer
     if (typeof infoHash === 'string') {
@@ -228,7 +279,7 @@ class Wire extends stream.Duplex {
    * `this.extendedHandshake` and `this.extendedMapping` before the extended handshake
    * is sent to the remote peer.
    */
-  _sendExtendedHandshake () {
+  private _sendExtendedHandshake() {
     // Create extended message object from registered extensions
     const msg = Object.assign({}, this.extendedHandshake)
     msg.m = {}
@@ -245,7 +296,7 @@ class Wire extends stream.Duplex {
   /**
    * Message "choke": <len=0001><id=0>
    */
-  choke () {
+  public choke() {
     if (this.amChoking) return
     this.amChoking = true
     this._debug('choke')
@@ -258,7 +309,7 @@ class Wire extends stream.Duplex {
   /**
    * Message "unchoke": <len=0001><id=1>
    */
-  unchoke () {
+  public unchoke() {
     if (!this.amChoking) return
     this.amChoking = false
     this._debug('unchoke')
@@ -268,7 +319,7 @@ class Wire extends stream.Duplex {
   /**
    * Message "interested": <len=0001><id=2>
    */
-  interested () {
+  public interested() {
     if (this.amInterested) return
     this.amInterested = true
     this._debug('interested')
@@ -278,7 +329,7 @@ class Wire extends stream.Duplex {
   /**
    * Message "uninterested": <len=0001><id=3>
    */
-  uninterested () {
+  public uninterested() {
     if (!this.amInterested) return
     this.amInterested = false
     this._debug('uninterested')
@@ -289,7 +340,7 @@ class Wire extends stream.Duplex {
    * Message "have": <len=0005><id=4><piece index>
    * @param  {number} index
    */
-  have (index) {
+  public have(index: number) {
     this._debug('have %d', index)
     this._message(4, [index], null)
   }
@@ -298,7 +349,7 @@ class Wire extends stream.Duplex {
    * Message "bitfield": <len=0001+X><id=5><bitfield>
    * @param  {BitField|Buffer} bitfield
    */
-  bitfield (bitfield) {
+  public bitfield(bitfield: BitField | Buffer) {
     this._debug('bitfield')
     if (!Buffer.isBuffer(bitfield)) bitfield = bitfield.buffer
     this._message(5, [], bitfield)
@@ -311,14 +362,14 @@ class Wire extends stream.Duplex {
    * @param  {number}   length
    * @param  {function} cb
    */
-  request (index, offset, length, cb) {
-    if (!cb) cb = () => {}
+  public request(index: number, offset: number, length: number, cb: Function) {
+    if (!cb) cb = () => { }
     if (this._finished) return cb(new Error('wire is closed'))
     if (this.peerChoking) return cb(new Error('peer is choking'))
 
     this._debug('request index=%d offset=%d length=%d', index, offset, length)
 
-    this.requests.push(new Request(index, offset, length, cb))
+    this.requests.push(new PieceRequest(index, offset, length, cb))
     this._updateTimeout()
     this._message(6, [index, offset, length], null)
   }
@@ -329,7 +380,7 @@ class Wire extends stream.Duplex {
    * @param  {number} offset
    * @param  {Buffer} buffer
    */
-  piece (index, offset, buffer) {
+  public piece(index: number, offset: number, buffer: Buffer) {
     this._debug('piece index=%d offset=%d', index, offset)
     this.uploaded += buffer.length
     this.uploadSpeed(buffer.length)
@@ -343,7 +394,7 @@ class Wire extends stream.Duplex {
    * @param  {number} offset
    * @param  {number} length
    */
-  cancel (index, offset, length) {
+  public cancel(index: number, offset: number, length: number) {
     this._debug('cancel index=%d offset=%d length=%d', index, offset, length)
     this._callback(
       this._pull(this.requests, index, offset, length),
@@ -357,7 +408,7 @@ class Wire extends stream.Duplex {
    * Message: "port" <len=0003><id=9><listen-port>
    * @param {Number} port
    */
-  port (port) {
+  public port(port: number) {
     this._debug('port %d', port)
     const message = Buffer.from(MESSAGE_PORT)
     message.writeUInt16BE(port, 5)
@@ -369,7 +420,7 @@ class Wire extends stream.Duplex {
    * @param  {number|string} ext
    * @param  {Object} obj
    */
-  extended (ext, obj) {
+  public extended(ext: number | string, obj: object) {
     this._debug('extended ext=%s', ext)
     if (typeof ext === 'string' && this.peerExtendedMapping[ext]) {
       ext = this.peerExtendedMapping[ext]
@@ -388,12 +439,12 @@ class Wire extends stream.Duplex {
    * Duplex stream method. Called whenever the remote peer stream wants data. No-op
    * since we'll just push data whenever we get it.
    */
-  _read () {}
+  _read() { }
 
   /**
    * Send a message to the remote peer.
    */
-  _message (id, numbers, data) {
+  private _message(id, numbers, data) {
     const dataLength = data ? data.length : 0
     const buffer = Buffer.allocUnsafe(5 + (4 * numbers.length))
 
@@ -407,7 +458,7 @@ class Wire extends stream.Duplex {
     if (data) this._push(data)
   }
 
-  _push (data) {
+  private _push(data) {
     if (this._finished) return
     return this.push(data)
   }
@@ -416,12 +467,12 @@ class Wire extends stream.Duplex {
   // INCOMING MESSAGES
   //
 
-  _onKeepAlive () {
+  private _onKeepAlive() {
     this._debug('got keep-alive')
     this.emit('keep-alive')
   }
 
-  _onHandshake (infoHashBuffer, peerIdBuffer, extensions) {
+  private _onHandshake(infoHashBuffer, peerIdBuffer, extensions) {
     const infoHash = infoHashBuffer.toString('hex')
     const peerId = peerIdBuffer.toString('hex')
 
@@ -439,13 +490,13 @@ class Wire extends stream.Duplex {
     }
 
     if (extensions.extended && this._handshakeSent &&
-        !this._extendedHandshakeSent) {
+      !this._extendedHandshakeSent) {
       // outgoing connection
       this._sendExtendedHandshake()
     }
   }
 
-  _onChoke () {
+  private _onChoke() {
     this.peerChoking = true
     this._debug('got choke')
     this.emit('choke')
@@ -454,25 +505,25 @@ class Wire extends stream.Duplex {
     }
   }
 
-  _onUnchoke () {
+  private _onUnchoke() {
     this.peerChoking = false
     this._debug('got unchoke')
     this.emit('unchoke')
   }
 
-  _onInterested () {
+  private _onInterested() {
     this.peerInterested = true
     this._debug('got interested')
     this.emit('interested')
   }
 
-  _onUninterested () {
+  private _onUninterested() {
     this.peerInterested = false
     this._debug('got uninterested')
     this.emit('uninterested')
   }
 
-  _onHave (index) {
+  private _onHave(index) {
     if (this.peerPieces.get(index)) return
     this._debug('got have %d', index)
 
@@ -480,13 +531,13 @@ class Wire extends stream.Duplex {
     this.emit('have', index)
   }
 
-  _onBitField (buffer) {
+  private _onBitField(buffer) {
     this.peerPieces = new BitField(buffer)
     this._debug('got bitfield')
     this.emit('bitfield', this.peerPieces)
   }
 
-  _onRequest (index, offset, length) {
+  private _onRequest(index, offset, length) {
     if (this.amChoking) return
     this._debug('got request index=%d offset=%d length=%d', index, offset, length)
 
@@ -496,12 +547,12 @@ class Wire extends stream.Duplex {
       this.piece(index, offset, buffer)
     }
 
-    var request = new Request(index, offset, length, respond)
+    var request = new PieceRequest(index, offset, length, respond)
     this.peerRequests.push(request)
     this.emit('request', index, offset, length, respond)
   }
 
-  _onPiece (index, offset, buffer) {
+  private _onPiece(index, offset, buffer) {
     this._debug('got piece index=%d offset=%d', index, offset)
     this._callback(this._pull(this.requests, index, offset, buffer.length), null, buffer)
     this.downloaded += buffer.length
@@ -510,18 +561,18 @@ class Wire extends stream.Duplex {
     this.emit('piece', index, offset, buffer)
   }
 
-  _onCancel (index, offset, length) {
+  private  _onCancel(index, offset, length) {
     this._debug('got cancel index=%d offset=%d length=%d', index, offset, length)
     this._pull(this.peerRequests, index, offset, length)
     this.emit('cancel', index, offset, length)
   }
 
-  _onPort (port) {
+  private _onPort(port) {
     this._debug('got port %d', port)
     this.emit('port', port)
   }
 
-  _onExtended (ext, buf) {
+  private _onExtended(ext, buf) {
     if (ext === 0) {
       let info
       try {
@@ -559,7 +610,7 @@ class Wire extends stream.Duplex {
     }
   }
 
-  _onTimeout () {
+  private _onTimeout() {
     this._debug('request timed out')
     this._callback(this.requests.shift(), new Error('request has timed out'), null)
     this.emit('timeout')
@@ -575,7 +626,7 @@ class Wire extends stream.Duplex {
    * @param  {string} encoding
    * @param  {function} cb
    */
-  _write (data, encoding, cb) {
+  _write(data: Buffer, encoding: string, cb: (e: any) => void) {
     this._bufferSize += data.length
     this._buffer.push(data)
 
@@ -593,7 +644,7 @@ class Wire extends stream.Duplex {
     cb(null) // Signal that we're ready for more data
   }
 
-  _callback (request, err, buffer) {
+  private _callback(request, err, buffer) {
     if (!request) return
 
     this._clearTimeout()
@@ -602,14 +653,14 @@ class Wire extends stream.Duplex {
     request.callback(err, buffer)
   }
 
-  _clearTimeout () {
+  private _clearTimeout() {
     if (!this._timeout) return
 
     clearTimeout(this._timeout)
     this._timeout = null
   }
 
-  _updateTimeout () {
+  private _updateTimeout() {
     if (!this._timeoutMs || !this.requests.length || this._timeout) return
 
     this._timeout = setTimeout(() => this._onTimeout(), this._timeoutMs)
@@ -623,7 +674,7 @@ class Wire extends stream.Duplex {
    * @param  {number} size
    * @param  {function} parser
    */
-  _parse (size, parser) {
+  private _parse(size: number, parser: Function) {
     this._parserSize = size
     this._parser = parser
   }
@@ -633,7 +684,7 @@ class Wire extends stream.Duplex {
    * waited for in order to have the whole message.
    * @param  {Buffer} buffer
    */
-  _onMessageLength (buffer) {
+  private _onMessageLength(buffer: Buffer) {
     const length = buffer.readUInt32BE(0)
     if (length > 0) {
       this._parse(length, this._onMessage)
@@ -647,7 +698,7 @@ class Wire extends stream.Duplex {
    * Handle a message from the remote peer.
    * @param  {Buffer} buffer
    */
-  _onMessage (buffer) {
+  private _onMessage(buffer: Buffer) {
     this._parse(4, this._onMessageLength)
     switch (buffer[0]) {
       case 0:
@@ -690,7 +741,7 @@ class Wire extends stream.Duplex {
     }
   }
 
-  _parseHandshake () {
+  private _parseHandshake() {
     this._parse(1, buffer => {
       const pstrlen = buffer.readUInt8(0)
       this._parse(pstrlen + 48, handshake => {
@@ -710,14 +761,14 @@ class Wire extends stream.Duplex {
     })
   }
 
-  _onFinish () {
+  private _onFinish() {
     this._finished = true
 
     this.push(null) // stream cannot be half open, so signal the end of it
-    while (this.read()) {} // consume and discard the rest of the stream data
+    while (this.read()) { } // consume and discard the rest of the stream data
 
     clearInterval(this._keepAliveInterval)
-    this._parse(Number.MAX_VALUE, () => {})
+    this._parse(Number.MAX_VALUE, () => { })
     while (this.peerRequests.length) {
       this.peerRequests.pop()
     }
@@ -726,12 +777,12 @@ class Wire extends stream.Duplex {
     }
   }
 
-  _debug (...args) {
+  private _debug(...args) {
     args[0] = `[${this._debugId}] ${args[0]}`
     debug(...args)
   }
 
-  _pull (requests, piece, offset, length) {
+  private _pull(requests, piece, offset, length) {
     for (let i = 0; i < requests.length; i++) {
       const req = requests[i]
       if (req.piece === piece && req.offset === offset && req.length === length) {
@@ -742,5 +793,3 @@ class Wire extends stream.Duplex {
     return null
   }
 }
-
-module.exports = Wire
