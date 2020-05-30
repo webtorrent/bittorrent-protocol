@@ -1,7 +1,7 @@
 {
   "name": "@firaenix/bittorrent-protocol",
   "description": "Simple, robust, BitTorrent peer wire protocol implementation",
-  "version": "3.2.4",
+  "version": "3.2.5",
   "author": {
     "name": "Firaenix",
     "email": "Nick.Carton@gmail.com"
