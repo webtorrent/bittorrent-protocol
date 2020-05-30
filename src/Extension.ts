@@ -11,7 +11,7 @@ export type ExtendedHandshake = {
 
 export type HandshakeExtensions = { [name: string]: boolean };
 
-interface IExtension {
+export interface IExtension {
   wire: Wire;
   name: string;
   requirePeer?: boolean;

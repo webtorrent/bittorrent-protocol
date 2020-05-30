@@ -9,8 +9,8 @@
       "request": "launch",
       "name": "Launch Program",
       "program": "${workspaceFolder}/run/index.ts",
-      "preLaunchTask": "tsc: build - tsconfig.json",
-      "outFiles": ["${workspaceFolder}/lib/**/*.js"],
+      "preLaunchTask": "tsc: build - tsconfig.dev.json",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "env": { "DEBUG": "*" }
     }
   ]

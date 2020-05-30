@@ -29,6 +29,7 @@
     "eslint": "^7.1.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.3",
+    "parcel-bundler": "^1.12.4",
     "prettier": "^2.0.5",
     "standard": "*",
     "tape": "^4.0.0",
@@ -60,6 +61,6 @@
     "lint": "eslint ./**/*.ts",
     "test": "ts-node node_modules/tape/bin/tape test/*.ts",
     "start": "ts-node ./run/index.ts",
-    "build": "tsc"
+    "build": "tsc && parcel build ./lib/index.js --out-file index.min.js -d ./lib --no-source-maps"
   }
 }
