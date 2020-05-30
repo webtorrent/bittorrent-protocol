@@ -81,7 +81,8 @@ test('Extension.onExtendedHandshake', (t) => {
     public onHandshake: (infoHash: string, peerId: string, extensions: HandshakeExtensions) => void;
 
     public onExtendedHandshake = (handshake: ExtendedHandshake): void => {
-      t.ok(handshake.m.test_extension, 'peer extended handshake includes extension name');
+      t.ok(handshake.m, 'm field should be populated in Extended handshake');
+      t.ok(handshake.m?.test_extension, 'peer extended handshake includes extension name');
       t.equal(handshake.hello.toString(), 'world!', 'peer extended handshake includes extension-defined parameters');
     };
 

@@ -10,15 +10,33 @@ class NewExtension extends Extension {
   public requirePeer = false;
 
   public onHandshake = (infoHash: string, peerId: string, extensions: HandshakeExtensions) => {
-    console.log(this.wire.wireName, 'New Handshake incoming', infoHash, peerId, extensions);
+    console.log(this.wire.wireName, 'NewExtension incoming', infoHash, peerId, extensions);
   };
 
   public onExtendedHandshake = (handshake: ExtendedHandshake) => {
-    console.log(this.wire.wireName, 'New Extended Handshake incoming', handshake);
+    console.log(this.wire.wireName, 'NewExtension Extended Handshake incoming', handshake);
   };
 
   public onMessage = (buf: Buffer) => {
-    console.log(this.wire.wireName, 'new Message incoming', bencode.decode(buf));
+    console.log(this.wire.wireName, 'NewExtension incoming', bencode.decode(buf));
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+class NewExtension2 extends Extension {
+  public name = 'new_extension2';
+  public requirePeer = true;
+
+  public onHandshake = (infoHash: string, peerId: string, extensions: HandshakeExtensions) => {
+    console.log(this.wire.wireName, 'NewExtension2 incoming', infoHash, peerId, extensions);
+  };
+
+  public onExtendedHandshake = (handshake: ExtendedHandshake) => {
+    console.log(this.wire.wireName, 'NewExtension2 Extended Handshake incoming', handshake);
+  };
+
+  public onMessage = (buf: Buffer) => {
+    console.log(this.wire.wireName, 'NewExtension2 incoming', bencode.decode(buf));
   };
 }
 
@@ -26,6 +44,8 @@ outgoingWire.pipe(incomingWire).pipe(outgoingWire);
 
 incomingWire.use(NewExtension);
 outgoingWire.use(NewExtension);
+outgoingWire.use(NewExtension2);
+// incomingWire.use(NewExtension2);
 
 incomingWire.on('handshake', (...data: unknown[]) => {
   console.log('{incomingWire} Incoming handshake from ', data);

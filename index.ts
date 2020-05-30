@@ -6,6 +6,7 @@ import randombytes from 'randombytes';
 import speedometer from 'speedometer';
 import stream from 'readable-stream';
 import { Extension, ExtendedHandshake } from './Extension';
+import { throws } from 'assert';
 
 const debug = debugNs('bittorrent-protocol');
 
@@ -54,7 +55,7 @@ export default class Wire extends stream.Duplex {
 
   public extendedMapping: { [key: number]: string };
   public peerExtendedMapping: { [key: string]: number };
-  public extendedHandshake: unknown;
+  public extendedHandshake: ExtendedHandshake;
   public peerExtendedHandshake: ExtendedHandshake;
   public _ext: { [extensionName: string]: Extension };
   public _nextExt: number;
@@ -110,9 +111,9 @@ export default class Wire extends stream.Duplex {
 
     // The extended handshake to send, minus the "m" field, which gets automatically
     // filled from `this.extendedMapping`
-    this.extendedHandshake = {};
+    this.extendedHandshake = { m: {} };
 
-    this.peerExtendedHandshake = {}; // remote peer's extended handshake
+    this.peerExtendedHandshake = { m: {} }; // remote peer's extended handshake
 
     this._ext = {}; // string -> function, ex 'ut_metadata' -> ut_metadata()
     this._nextExt = 1;
@@ -583,7 +584,7 @@ export default class Wire extends stream.Duplex {
 
   private _onExtended(ext, buf) {
     if (ext === 0) {
-      let info;
+      let info: ExtendedHandshake | undefined;
       try {
         info = bencode.decode(buf);
       } catch (err) {
@@ -592,6 +593,15 @@ export default class Wire extends stream.Duplex {
 
       if (!info) return;
       this.peerExtendedHandshake = info;
+
+      // Find any extensions that require the other peer to have it too.
+      for (const name in this._ext) {
+        if (this._ext[name] && this._ext[name].requirePeer && !this.peerExtendedHandshake.m?.[name]) {
+          this._debug('Destroying connection, peer doesnt have same extension.', name);
+          this.destroy();
+          return;
+        }
+      }
 
       let name;
       if (typeof info.m === 'object') {

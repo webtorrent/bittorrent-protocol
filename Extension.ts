@@ -1,6 +1,14 @@
 import Wire from './index';
 
-export type ExtendedHandshake = { [key: string]: any };
+export type ExtendedHandshakeMessageParams = { [key: string]: any };
+
+/**
+ * http://www.bittorrent.org/beps/bep_0010.html
+ */
+export type ExtendedHandshake = {
+  m?: { [name: string]: number };
+} & ExtendedHandshakeMessageParams;
+
 export type HandshakeExtensions = { [name: string]: boolean };
 
 interface IExtension {
