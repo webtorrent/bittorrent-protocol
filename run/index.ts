@@ -1,5 +1,5 @@
 import Wire from '../';
-import { Extension, ExtendedHandshake, HandshakeExtensions } from '../Extension';
+import { Extension, ExtendedHandshake, HandshakeExtensions } from '../src/Extension';
 import bencode from 'bencode';
 
 const incomingWire = new Wire('incomingWire');

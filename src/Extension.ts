@@ -1,4 +1,4 @@
-import Wire from './index';
+import Wire from './Wire';
 
 export type ExtendedHandshakeMessageParams = { [key: string]: any };
 

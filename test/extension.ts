@@ -1,6 +1,6 @@
 import Wire from '../';
 import test from 'tape';
-import { Extension, HandshakeExtensions, ExtendedHandshake } from '../Extension';
+import { Extension, HandshakeExtensions, ExtendedHandshake } from '../src/Extension';
 
 test('Extension.prototype.name', (t) => {
   t.plan(2);

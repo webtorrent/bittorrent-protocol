@@ -5,6 +5,7 @@
     "outDir": "lib",
     "declaration": true,
     "declarationDir": "./lib",
+    "sourceRoot": "./src",
 
     "sourceMap": true,
     "target": "es5",
@@ -36,5 +37,5 @@
     "experimentalDecorators": true /* Enables experimental support for ES7 decorators. */,
     "emitDecoratorMetadata": true /* Enables experimental support for emitting type metadata for decorators. */
   },
-  "exclude": ["./out", "node_modules"]
+  "exclude": ["./out", "./lib", "./run", "./test", "node_modules"]
 }
