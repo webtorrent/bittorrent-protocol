@@ -7,7 +7,6 @@
     "declarationDir": "./dist",
 
     "sourceMap": true,
-    "sourceRoot": "./src",
 
     "target": "es5",
     "moduleResolution": "node",
