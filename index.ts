@@ -192,7 +192,6 @@ export default class Wire extends stream.Duplex {
     const handler = new newExtension(this);
 
     const name = handler.name;
-    console.log('new Extension name', name);
     if (!name) {
       throw new Error('Extension class requires a "name" property');
     }

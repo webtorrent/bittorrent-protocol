@@ -2,6 +2,8 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "lib": ["esnext", "DOM"],
+    "outDir": "out",
+    "sourceMap": true,
     "target": "es5",
     "moduleResolution": "node",
     "module": "commonjs",
@@ -31,5 +33,5 @@
     "experimentalDecorators": true /* Enables experimental support for ES7 decorators. */,
     "emitDecoratorMetadata": true /* Enables experimental support for emitting type metadata for decorators. */
   },
-  "exclude": ["./dist", "node_modules"]
+  "exclude": ["./out", "node_modules"]
 }
