@@ -1,13 +1,5 @@
-# bittorrent-protocol [![travis][travis-image]][travis-url] [![npm][npm-image]][npm-url] [![downloads][downloads-image]][downloads-url] [![javascript style guide][standard-image]][standard-url]
+# bittorrent-protocol ![tests](https://github.com/Firaenix/bittorrent-protocol/workflows/Tests/badge.svg)
 
-[travis-image]: https://img.shields.io/travis/webtorrent/bittorrent-protocol/master.svg
-[travis-url]: https://travis-ci.org/webtorrent/bittorrent-protocol
-[npm-image]: https://img.shields.io/npm/v/bittorrent-protocol.svg
-[npm-url]: https://npmjs.org/package/bittorrent-protocol
-[downloads-image]: https://img.shields.io/npm/dm/bittorrent-protocol.svg
-[downloads-url]: https://npmjs.org/package/bittorrent-protocol
-[standard-image]: https://img.shields.io/badge/code_style-standard-brightgreen.svg
-[standard-url]: https://standardjs.com
 
 ### Simple, robust, BitTorrent wire protocol implementation
 
