@@ -542,8 +542,10 @@ export default class Wire extends stream.Duplex {
     this.emit('bitfield', this.peerPieces);
   }
 
-  private _onRequest(index, offset, length): void {
-    if (this.amChoking) return;
+  private _onRequest(index: number, offset: number, length: number): void {
+    if (this.amChoking) {
+      return;
+    }
     this._debug('got request index=%d offset=%d length=%d', index, offset, length);
 
     const respond = (err, buffer) => {
