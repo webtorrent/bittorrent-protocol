@@ -1,4 +1,4 @@
-# bittorrent-protocol ![tests](https://github.com/Firaenix/bittorrent-protocol/workflows/Tests/badge.svg) ![Linter](https://github.com/Firaenix/bittorrent-protocol/workflows/Linter/badge.svg)
+# bittorrent-protocol ![tests](https://github.com/Firaenix/bittorrent-protocol/workflows/Build/badge.svg) ![Linter](https://github.com/Firaenix/bittorrent-protocol/workflows/Linter/badge.svg)
 
 ### Simple, robust, BitTorrent wire protocol implementation
 
@@ -18,7 +18,7 @@ Also works in the browser with [browserify](http://browserify.org/)! This module
 ## install
 
 ```
-npm install bittorrent-protocol
+npm install @firaenix/bittorrent-protocol
 ```
 
 ## usage

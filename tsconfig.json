@@ -2,7 +2,10 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "lib": ["esnext", "DOM"],
-    "outDir": "out",
+    "outDir": "lib",
+    "declaration": true,
+    "declarationDir": "./lib",
+
     "sourceMap": true,
     "target": "es5",
     "moduleResolution": "node",

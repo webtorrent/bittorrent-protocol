@@ -1,2 +1,5 @@
 .travis.yml
 test/
+node_modules
+.vscode
+.git*
