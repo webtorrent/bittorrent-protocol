@@ -1,49 +1,51 @@
-import Protocol from '../'
-import test from 'tape'
+import Protocol from '../';
+import test from 'tape';
 
-test('State changes correctly on wire \'end\'', t => {
-  t.plan(11)
+test("State changes correctly on wire 'end'", (t) => {
+  t.plan(11);
 
-  const wire = new Protocol()
-  wire.on('error', err => { t.fail(err) })
-  wire.pipe(wire)
+  const wire = new Protocol();
+  wire.on('error', (err) => {
+    t.fail(err);
+  });
+  wire.pipe(wire);
 
-  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'))
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'));
 
-  t.ok(wire.amChoking)
-  t.ok(wire.peerChoking)
+  t.ok(wire.amChoking);
+  t.ok(wire.peerChoking);
 
   wire.on('unchoke', () => {
-    t.ok(!wire.amChoking)
-    t.ok(!wire.peerChoking)
-    wire.interested()
-  })
+    t.ok(!wire.amChoking);
+    t.ok(!wire.peerChoking);
+    wire.interested();
+  });
 
-  wire.on('interested', () => {
-    t.ok(wire.peerInterested)
-    destroy()
-  })
-
-  function destroy () {
+  function destroy(): void {
     wire.on('choke', () => {
-      t.pass('wire got choke event')
-    })
+      t.pass('wire got choke event');
+    });
     wire.on('uninterested', () => {
-      t.pass('wire got uninterested event')
-    })
+      t.pass('wire got uninterested event');
+    });
 
     wire.on('end', () => {
-      t.ok(wire.peerChoking)
-      t.ok(!wire.peerInterested)
-    })
+      t.ok(wire.peerChoking);
+      t.ok(!wire.peerInterested);
+    });
 
     wire.on('finish', () => {
-      t.ok(wire.peerChoking)
-      t.ok(!wire.peerInterested)
-    })
+      t.ok(wire.peerChoking);
+      t.ok(!wire.peerInterested);
+    });
 
-    wire.destroy()
+    wire.destroy();
   }
 
-  wire.unchoke()
-})
+  wire.on('interested', () => {
+    t.ok(wire.peerInterested);
+    destroy();
+  });
+
+  wire.unchoke();
+});

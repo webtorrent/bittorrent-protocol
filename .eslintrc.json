@@ -1,0 +1,10 @@
+{
+  "rules": {
+    "no-constant-condition": 0,
+    "prettier/prettier": "error"
+  },
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint", "prettier"],
+  "extends": ["plugin:prettier/recommended", "eslint:recommended", "plugin:@typescript-eslint/eslint-recommended", "plugin:@typescript-eslint/recommended"]
+}

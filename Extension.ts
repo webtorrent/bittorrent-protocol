@@ -1,7 +1,7 @@
 import Wire from './index';
 
-export type ExtendedHandshake = { [key: string]: any; };
-export type HandshakeExtensions = { [name: string]: boolean; }
+export type ExtendedHandshake = { [key: string]: any };
+export type HandshakeExtensions = { [name: string]: boolean };
 
 interface IExtension {
   wire: Wire;
@@ -13,9 +13,9 @@ interface IExtension {
 }
 
 export abstract class Extension implements IExtension {
-  public  wire: Wire;
+  public wire: Wire;
   public abstract name: string;
-  
+
   constructor(wire: Wire) {
     this.wire = wire;
   }
