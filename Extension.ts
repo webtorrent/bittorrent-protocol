@@ -24,7 +24,7 @@ interface IExtension {
 export abstract class Extension implements IExtension {
   public wire: Wire;
   public abstract name: string;
-  public abstract requirePeer: boolean;
+  public abstract requirePeer?: boolean;
 
   constructor(wire: Wire) {
     this.wire = wire;

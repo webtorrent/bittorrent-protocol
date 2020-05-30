@@ -68,7 +68,7 @@ test('Extension.onExtendedHandshake', (t) => {
 
   class TestExtension extends Extension {
     public name = 'test_extension';
-    public requirePeer = false;
+    public requirePeer = undefined;
 
     constructor(wire: Wire) {
       super(wire);
