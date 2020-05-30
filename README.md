@@ -1,4 +1,4 @@
-# bittorrent-protocol ![tests](https://github.com/Firaenix/bittorrent-protocol/workflows/Build/badge.svg) ![Linter](https://github.com/Firaenix/bittorrent-protocol/workflows/Linter/badge.svg)
+# bittorrent-protocol ![tests](https://github.com/Firaenix/bittorrent-protocol/workflows/Test-And-Publish/badge.svg) ![Linter](https://github.com/Firaenix/bittorrent-protocol/workflows/Linter/badge.svg)
 
 ### Simple, robust, BitTorrent wire protocol implementation
 
