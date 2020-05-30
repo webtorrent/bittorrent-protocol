@@ -1,11 +1,13 @@
 import arrayRemove from 'unordered-array-remove';
 import bencode from 'bencode';
 import BitField from 'bitfield';
-const debug = require('debug')('bittorrent-protocol');
+import debugNs from 'debug';
 import randombytes from 'randombytes';
 import speedometer from 'speedometer';
 import stream from 'readable-stream';
-import { Extension } from './Extension';
+import { Extension, ExtendedHandshake } from './Extension';
+
+const debug = debugNs('bittorrent-protocol');
 
 const BITFIELD_GROW = 400000;
 const KEEP_ALIVE_TIMEOUT = 55000;
@@ -20,59 +22,60 @@ const MESSAGE_UNINTERESTED = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x03]);
 const MESSAGE_RESERVED = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 const MESSAGE_PORT = [0x00, 0x00, 0x00, 0x03, 0x09, 0x00, 0x00];
 
-export class PieceRequest {
-  public piece: any;
-  public offset: any;
-  public length: any;
-  public callback: any;
+export type ExtensionsMap = { [x: string]: boolean; dht: boolean; extended: boolean };
 
-  constructor(piece, offset, length, callback) {
+export class PieceRequest {
+  public piece: number;
+  public offset: number;
+  public length: number;
+  public callback: Function;
+
+  constructor(piece: number, offset: number, length: number, cb: Function) {
     this.piece = piece;
     this.offset = offset;
     this.length = length;
-    this.callback = callback;
+    this.callback = cb;
   }
 }
 
 export default class Wire extends stream.Duplex {
   public _debugId: string;
-  public peerId: string | null;
-  public peerIdBuffer: any;
-  public type: any;
-  public amChoking: any;
-  public amInterested: any;
-  public peerChoking: any;
-  public peerInterested: any;
-  public peerPieces: any;
-  public peerExtensions: any;
-  public requests: any;
-  public peerRequests: any;
-  public extendedMapping: any;
-  public peerExtendedMapping: any;
-  public extendedHandshake: any;
-  public peerExtendedHandshake: any;
-  public _ext: any;
-  public _nextExt: any;
-  public uploaded: any;
-  public downloaded: any;
-  public uploadSpeed: any;
-  public downloadSpeed: any;
-  public _keepAliveInterval: any;
-  public _timeout: any;
-  public _timeoutMs: any;
-  public destroyed: any;
-  public _finished: any;
-  public _parserSize: any;
-  public _parser: any;
-  public _buffer: any;
-  public _bufferSize: any;
-  public once: any;
-  public _timeoutUnref: any;
-  public emit: any;
-  public _handshakeSent: any;
-  public _extendedHandshakeSent: any;
-  public push: any;
-  public read: any;
+  public peerId: string | undefined;
+  public peerIdBuffer: Buffer | undefined;
+  public type: 'webrtc' | 'tcpIncoming' | 'tcpOutgoing' | 'webSeed' | null;
+  public amChoking: boolean;
+  public amInterested: boolean;
+  public peerChoking: boolean;
+  public peerInterested: boolean;
+  public peerPieces: BitField;
+  public peerExtensions: ExtensionsMap;
+  public requests: PieceRequest[];
+  public peerRequests: unknown[];
+
+  public extendedMapping: { [key: number]: string };
+  public peerExtendedMapping: { [key: string]: number };
+  public extendedHandshake: unknown;
+  public peerExtendedHandshake: ExtendedHandshake;
+  public _ext: { [extensionName: string]: Extension };
+  public _nextExt: number;
+
+  public uploaded: number;
+  public downloaded: number;
+  public uploadSpeed: (speed: number) => void;
+  public downloadSpeed: (speed: number) => void;
+
+  public _keepAliveInterval: number | NodeJS.Timeout | undefined;
+  public _timeout: number | NodeJS.Timeout | undefined;
+  public _timeoutMs: number;
+  public destroyed: boolean;
+  public _finished: unknown;
+  public _parserSize: number;
+  public _parser: ((buf: Buffer) => unknown) | null;
+  public _buffer: Buffer[];
+  public _bufferSize: number;
+  public _timeoutUnref: unknown;
+  public _handshakeSent: unknown;
+  public _extendedHandshakeSent: unknown;
 
   constructor() {
     super();
@@ -80,8 +83,8 @@ export default class Wire extends stream.Duplex {
     this._debugId = randombytes(4).toString('hex');
     this._debug('new wire');
 
-    this.peerId = null; // remote peer id (hex string)
-    this.peerIdBuffer = null; // remote peer id (buffer)
+    this.peerId = undefined; // remote peer id (hex string)
+    this.peerIdBuffer = undefined; // remote peer id (buffer)
     this.type = null; // connection type ('webrtc', 'tcpIncoming', 'tcpOutgoing', 'webSeed')
 
     this.amChoking = true; // are we choking the peer?
@@ -95,7 +98,7 @@ export default class Wire extends stream.Duplex {
     // possible torrents but prevent malicious peers from growing bitfield to fill memory.
     this.peerPieces = new BitField(0, { grow: BITFIELD_GROW });
 
-    this.peerExtensions = {};
+    this.peerExtensions = { dht: false, extended: false };
 
     this.requests = []; // outgoing
     this.peerRequests = []; // incoming
@@ -117,8 +120,8 @@ export default class Wire extends stream.Duplex {
     this.uploadSpeed = speedometer();
     this.downloadSpeed = speedometer();
 
-    this._keepAliveInterval = null;
-    this._timeout = null;
+    this._keepAliveInterval = undefined;
+    this._timeout = undefined;
     this._timeoutMs = 0;
 
     this.destroyed = false; // was the wire ended by calling `destroy`?
@@ -139,9 +142,9 @@ export default class Wire extends stream.Duplex {
    * Set whether to send a "keep-alive" ping (sent every 55s)
    * @param {boolean} enable
    */
-  public setKeepAlive(enable: boolean) {
+  public setKeepAlive(enable: boolean): void {
     this._debug('setKeepAlive %s', enable);
-    clearInterval(this._keepAliveInterval);
+    clearInterval(this._keepAliveInterval as number);
     if (enable === false) return;
     this._keepAliveInterval = setInterval(() => {
       this.keepAlive();
@@ -153,7 +156,7 @@ export default class Wire extends stream.Duplex {
    * @param {number} ms
    * @param {boolean=} unref (should the timer be unref'd? default: false)
    */
-  public setTimeout(ms: number, unref?: boolean) {
+  public setTimeout(ms: number, unref?: boolean): void {
     this._debug('setTimeout ms=%d unref=%s', ms, unref);
     this._clearTimeout();
     this._timeoutMs = ms;
@@ -161,7 +164,7 @@ export default class Wire extends stream.Duplex {
     this._updateTimeout();
   }
 
-  public destroy(err?: Error | undefined, callback?: ((error: Error | null) => void) | undefined) {
+  public destroy() {
     if (this.destroyed) {
       return this;
     }
@@ -173,7 +176,7 @@ export default class Wire extends stream.Duplex {
     return this;
   }
 
-  public end(...args) {
+  public end(...args: any[]): void {
     this._debug('end');
     this._onUninterested();
     this._onChoke();
@@ -184,7 +187,7 @@ export default class Wire extends stream.Duplex {
    * Use the specified protocol extension.
    * @param  {function} Extension
    */
-  public use(newExtension: new (wire: Wire) => Extension) {
+  public use(newExtension: new (wire: Wire) => Extension): void {
     const ext = this._nextExt;
     const handler = new newExtension(this);
 
@@ -196,7 +199,8 @@ export default class Wire extends stream.Duplex {
 
     this._debug('use extension.name=%s', name);
 
-    function noop() {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    function noop(): void {}
 
     if (typeof handler.onHandshake !== 'function') {
       handler.onHandshake = noop;
@@ -281,8 +285,13 @@ export default class Wire extends stream.Duplex {
    */
   private _sendExtendedHandshake() {
     // Create extended message object from registered extensions
-    const msg = Object.assign({}, this.extendedHandshake);
-    msg.m = {};
+    type HandshakeMessage = { m: { [extName: string]: number } };
+    this._debug('TODO: Figure out type of extended message', this.extendedHandshake);
+    const msg: HandshakeMessage = {
+      ...Object.assign({}, this.extendedHandshake),
+      m: {}
+    };
+
     for (const ext in this.extendedMapping) {
       const name = this.extendedMapping[ext];
       msg.m[name] = Number(ext);
@@ -468,7 +477,7 @@ export default class Wire extends stream.Duplex {
     this.emit('keep-alive');
   }
 
-  private _onHandshake(infoHashBuffer, peerIdBuffer, extensions) {
+  private _onHandshake(infoHashBuffer: Buffer, peerIdBuffer: Buffer, extensions: ExtensionsMap) {
     const infoHash = infoHashBuffer.toString('hex');
     const peerId = peerIdBuffer.toString('hex');
 
@@ -532,22 +541,26 @@ export default class Wire extends stream.Duplex {
     this.emit('bitfield', this.peerPieces);
   }
 
-  private _onRequest(index, offset, length) {
+  private _onRequest(index, offset, length): void {
     if (this.amChoking) return;
     this._debug('got request index=%d offset=%d length=%d', index, offset, length);
 
     const respond = (err, buffer) => {
+      // below request var gets hoisted above this function.
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
       if (request !== this._pull(this.peerRequests, index, offset, length)) return;
       if (err) return this._debug('error satisfying request index=%d offset=%d length=%d (%s)', index, offset, length, err.message);
       this.piece(index, offset, buffer);
     };
 
+    // for some reason this field needs to be hoisted
+    // eslint-disable-next-line no-var
     var request = new PieceRequest(index, offset, length, respond);
     this.peerRequests.push(request);
     this.emit('request', index, offset, length, respond);
   }
 
-  private _onPiece(index, offset, buffer) {
+  private _onPiece(index, offset, buffer): void {
     this._debug('got piece index=%d offset=%d', index, offset);
     this._callback(this._pull(this.requests, index, offset, buffer.length), null, buffer);
     this.downloaded += buffer.length;
@@ -556,13 +569,13 @@ export default class Wire extends stream.Duplex {
     this.emit('piece', index, offset, buffer);
   }
 
-  private _onCancel(index, offset, length) {
+  private _onCancel(index, offset, length): void {
     this._debug('got cancel index=%d offset=%d length=%d', index, offset, length);
     this._pull(this.peerRequests, index, offset, length);
     this.emit('cancel', index, offset, length);
   }
 
-  private _onPort(port) {
+  private _onPort(port): void {
     this._debug('got port %d', port);
     this.emit('port', port);
   }
@@ -629,7 +642,9 @@ export default class Wire extends stream.Duplex {
       const buffer = this._buffer.length === 1 ? this._buffer[0] : Buffer.concat(this._buffer);
       this._bufferSize -= this._parserSize;
       this._buffer = this._bufferSize ? [buffer.slice(this._parserSize)] : [];
-      this._parser(buffer.slice(0, this._parserSize));
+      if (this._parser) {
+        this._parser(buffer.slice(0, this._parserSize));
+      }
     }
 
     cb(null); // Signal that we're ready for more data
@@ -647,8 +662,8 @@ export default class Wire extends stream.Duplex {
   private _clearTimeout() {
     if (!this._timeout) return;
 
-    clearTimeout(this._timeout);
-    this._timeout = null;
+    clearTimeout(this._timeout as number);
+    this._timeout = undefined;
   }
 
   private _updateTimeout() {
@@ -665,7 +680,7 @@ export default class Wire extends stream.Duplex {
    * @param  {number} size
    * @param  {function} parser
    */
-  private _parse(size: number, parser: Function) {
+  private _parse(size: number, parser: (buf: Buffer) => unknown) {
     this._parserSize = size;
     this._parser = parser;
   }
@@ -746,7 +761,7 @@ export default class Wire extends stream.Duplex {
     this.push(null); // stream cannot be half open, so signal the end of it
     while (this.read()) {} // consume and discard the rest of the stream data
 
-    clearInterval(this._keepAliveInterval);
+    clearInterval(this._keepAliveInterval as number);
     this._parse(Number.MAX_VALUE, () => {});
     while (this.peerRequests.length) {
       this.peerRequests.pop();
@@ -756,9 +771,8 @@ export default class Wire extends stream.Duplex {
     }
   }
 
-  private _debug(...args) {
-    args[0] = `[${this._debugId}] ${args[0]}`;
-    debug(...args);
+  private _debug(...args: unknown[]) {
+    debug(`[${this._debugId}] ${args[0]}`, ...args);
   }
 
   private _pull(requests, piece, offset, length) {
