@@ -105,6 +105,40 @@ test('Extension.onExtendedHandshake', (t) => {
   wire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930', undefined);
 });
 
+test('Wire destroyed on Extension with requirePeer true', (t) => {
+  t.plan(2);
+
+  class TestExtension extends Extension {
+    public name = 'test_extension';
+    public requirePeer = true;
+
+    public onHandshake: (infoHash: string, peerId: string, extensions: HandshakeExtensions) => void;
+
+    public onExtendedHandshake: (handshake: ExtendedHandshake) => void;
+
+    public onMessage: (buf: Buffer) => void;
+  }
+
+  const incomingWire = new Wire('incomingWire');
+  const outgoingWire = new Wire('outgoingWire');
+
+  outgoingWire.pipe(incomingWire).pipe(outgoingWire);
+
+  incomingWire.use(TestExtension);
+
+  incomingWire.on('handshake', (...data: unknown[]) => {
+    incomingWire.handshake('4444444444444444444430313233343536373839', '4444444444444444444430313233343536373839');
+  });
+
+  incomingWire.on('destroy-required-extension', (reason: string) => {
+    t.true(incomingWire.destroy);
+    t.equals(reason, `Connected peer did not have the same extension: test_extension`);
+    t.end();
+  });
+
+  outgoingWire.handshake('3031323334353637383930313233343536373839', '3132333435363738393031323334353637383930');
+});
+
 test('Extension.onMessage', (t) => {
   t.plan(1);
 

@@ -288,7 +288,6 @@ export default class Wire extends stream.Duplex {
   private _sendExtendedHandshake() {
     // Create extended message object from registered extensions
     type HandshakeMessage = { m: { [extName: string]: number } };
-    this._debug('TODO: Figure out type of extended message', this.extendedHandshake);
     const msg: HandshakeMessage = {
       ...Object.assign({}, this.extendedHandshake),
       m: {}
@@ -599,6 +598,7 @@ export default class Wire extends stream.Duplex {
         if (this._ext[name] && this._ext[name].requirePeer && !this.peerExtendedHandshake.m?.[name]) {
           this._debug('Destroying connection, peer doesnt have same extension.', name);
           this.destroy();
+          this.emit('destroy-required-extension', `Connected peer did not have the same extension: ${name}`);
           return;
         }
       }
@@ -783,7 +783,7 @@ export default class Wire extends stream.Duplex {
   }
 
   private _debug(...args: unknown[]) {
-    debug(`[${this._debugId}] ${args[0]}`, ...args);
+    debug(`[${this._debugId}]`, ...args);
   }
 
   private _pull(requests, piece, offset, length) {
