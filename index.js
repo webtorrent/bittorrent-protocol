@@ -1,3 +1,4 @@
+/*! bittorrent-protocol. MIT License. WebTorrent LLC <https://webtorrent.io/opensource> */
 const arrayRemove = require('unordered-array-remove')
 const bencode = require('bencode')
 const BitField = require('bitfield')
