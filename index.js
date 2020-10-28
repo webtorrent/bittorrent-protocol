@@ -715,7 +715,10 @@ class Wire extends stream.Duplex {
     this._finished = true
 
     this.push(null) // stream cannot be half open, so signal the end of it
-    while (this.read()) {} // consume and discard the rest of the stream data
+    while (this.read()) {
+      // body intentionally empty
+      // consume and discard the rest of the stream data
+    }
 
     clearInterval(this._keepAliveInterval)
     this._parse(Number.MAX_VALUE, () => {})
