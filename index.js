@@ -497,7 +497,7 @@ class Wire extends stream.Duplex {
       this.piece(index, offset, buffer)
     }
 
-    var request = new Request(index, offset, length, respond)
+    const request = new Request(index, offset, length, respond)
     this.peerRequests.push(request)
     this.emit('request', index, offset, length, respond)
   }
