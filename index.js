@@ -1,7 +1,7 @@
 /*! bittorrent-protocol. MIT License. WebTorrent LLC <https://webtorrent.io/opensource> */
 const arrayRemove = require('unordered-array-remove')
 const bencode = require('bencode')
-const BitField = require('bitfield')
+const BitField = require('bitfield').default
 const debug = require('debug')('bittorrent-protocol')
 const randombytes = require('randombytes')
 const speedometer = require('speedometer')
