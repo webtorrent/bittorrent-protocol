@@ -605,14 +605,10 @@ class Wire extends stream.Duplex {
   }
 
   _resetTimeout (setAgain) {
-    if (!setAgain) {
+    if (!setAgain || !this._timeoutMs || !this.requests.length) {
       clearTimeout(this._timeout)
       this._timeout = null
       this._timeoutExpiresAt = null
-      return
-    }
-
-    if (!this._timeoutMs) {
       return
     }
 
