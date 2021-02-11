@@ -76,6 +76,7 @@ class Wire extends stream.Duplex {
     this._keepAliveInterval = null
     this._timeout = null
     this._timeoutMs = 0
+    this._timeoutExpiresAt = null
 
     this.destroyed = false // was the wire ended by calling `destroy`?
     this._finished = false
@@ -111,10 +112,9 @@ class Wire extends stream.Duplex {
    */
   setTimeout (ms, unref) {
     this._debug('setTimeout ms=%d unref=%s', ms, unref)
-    this._clearTimeout()
     this._timeoutMs = ms
     this._timeoutUnref = !!unref
-    this._updateTimeout()
+    this._resetTimeout(true)
   }
 
   destroy () {
@@ -320,7 +320,9 @@ class Wire extends stream.Duplex {
     this._debug('request index=%d offset=%d length=%d', index, offset, length)
 
     this.requests.push(new Request(index, offset, length, cb))
-    this._updateTimeout()
+    if (!this._timeout) {
+      this._resetTimeout(true)
+    }
     this._message(6, [index, offset, length], null)
   }
 
@@ -597,22 +599,30 @@ class Wire extends stream.Duplex {
   _callback (request, err, buffer) {
     if (!request) return
 
-    this._clearTimeout()
+    this._resetTimeout(!this.peerChoking && !this._finished)
 
-    if (!this.peerChoking && !this._finished) this._updateTimeout()
     request.callback(err, buffer)
   }
 
-  _clearTimeout () {
-    if (!this._timeout) return
+  _resetTimeout (setAgain) {
+    if (!setAgain || !this._timeoutMs || !this.requests.length) {
+      clearTimeout(this._timeout)
+      this._timeout = null
+      this._timeoutExpiresAt = null
+      return
+    }
 
-    clearTimeout(this._timeout)
-    this._timeout = null
-  }
+    const timeoutExpiresAt = Date.now() + this._timeoutMs
 
-  _updateTimeout () {
-    if (!this._timeoutMs || !this.requests.length || this._timeout) return
+    if (this._timeout) {
+      // If existing expiration is already within 5% of correct, it's close enough
+      if (timeoutExpiresAt - this._timeoutExpiresAt < this._timeoutMs * 0.05) {
+        return
+      }
+      clearTimeout(this._timeout)
+    }
 
+    this._timeoutExpiresAt = timeoutExpiresAt
     this._timeout = setTimeout(() => this._onTimeout(), this._timeoutMs)
     if (this._timeoutUnref && this._timeout.unref) this._timeout.unref()
   }
