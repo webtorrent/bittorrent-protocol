@@ -13,7 +13,7 @@
   "dependencies": {
     "bencode": "^2.0.1",
     "bitfield": "^4.0.0",
-    "debug": "^4.2.0",
+    "debug": "^4.3.1",
     "randombytes": "^2.1.0",
     "readable-stream": "^3.6.0",
     "speedometer": "^1.1.0",
@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "standard": "*",
-    "tape": "^5.0.1"
+    "tape": "^5.1.1"
   },
   "keywords": [
     "bittorrent",
