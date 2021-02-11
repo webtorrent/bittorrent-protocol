@@ -585,7 +585,7 @@ class Wire extends stream.Duplex {
     while (this._bufferSize >= this._parserSize) {
       const buffer = (this._buffer.length === 1)
         ? this._buffer[0]
-        : Buffer.concat(this._buffer)
+        : Buffer.concat(this._buffer, this._bufferSize)
       this._bufferSize -= this._parserSize
       this._buffer = this._bufferSize
         ? [buffer.slice(this._parserSize)]
