@@ -98,8 +98,12 @@ class Wire extends stream.Duplex {
     this._bufferSize = 0 // cached total length of buffers in `this._buffer`
 
     this._peEnabled = peEnabled
-    this._dh = crypto.createDiffieHellman(DH_PRIME, 'hex', DH_GENERATOR) // crypto object used to generate keys/secret
-    this._myPubKey = this._dh.generateKeys('hex') // my DH public key
+    if (peEnabled) {
+      this._dh = crypto.createDiffieHellman(DH_PRIME, 'hex', DH_GENERATOR) // crypto object used to generate keys/secret
+      this._myPubKey = this._dh.generateKeys('hex') // my DH public key
+    } else {
+      this._myPubKey = null
+    }
     this._peerPubKey = null // peer's DH public key
     this._sharedSecret = null // shared DH secret
     this._peerCryptoProvide = [] // encryption methods provided by peer; we expect this to always contain 0x02
@@ -214,9 +218,11 @@ class Wire extends stream.Duplex {
   }
 
   sendPe1 () {
-    var padALen = Math.floor(Math.random() * 513)
-    var padA = randombytes(padALen)
-    this._push(Buffer.concat([Buffer.from(this._myPubKey, 'hex'), padA]))
+    if (this._peEnabled) {
+      var padALen = Math.floor(Math.random() * 513)
+      var padA = randombytes(padALen)
+      this._push(Buffer.concat([Buffer.from(this._myPubKey, 'hex'), padA]))
+    }
   }
 
   sendPe2 () {
