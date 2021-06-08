@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "standard": "*",
-    "tape": "^5.1.1"
+    "tape": "5.2.2"
   },
   "keywords": [
     "bittorrent",
