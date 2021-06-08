@@ -59,9 +59,6 @@
   "renovate": {
     "extends": [
       "github>webtorrent/renovate-config"
-    ],
-    "lockFileMaintenance": {
-      "enabled": false
-    }
-  },
+    ]
+  }
 }
