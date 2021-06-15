@@ -1,3 +1,10 @@
+## [3.4.1](https://github.com/webtorrent/bittorrent-protocol/compare/v3.4.0...v3.4.1) (2021-06-15)
+
+
+### Bug Fixes
+
+* modernize ([3d3e244](https://github.com/webtorrent/bittorrent-protocol/commit/3d3e244319036583230d64824ce1388287233e02))
+
 # [3.4.0](https://github.com/webtorrent/bittorrent-protocol/compare/v3.3.2...v3.4.0) (2021-06-15)
 
 
