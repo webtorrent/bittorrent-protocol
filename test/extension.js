@@ -42,16 +42,20 @@ test('Extension.onHandshake', t => {
 test('Extension.onExtendedHandshake', t => {
   t.plan(3)
 
-  function TestExtension (wire) {
-    wire.extendedHandshake = {
-      hello: 'world!'
+  class TestExtension {
+    constructor (wire) {
+      wire.extendedHandshake = {
+        hello: 'world!'
+      }
+    }
+
+    onExtendedHandshake (handshake) {
+      t.ok(handshake.m.test_extension, 'peer extended handshake includes extension name')
+      t.equal(handshake.hello.toString(), 'world!', 'peer extended handshake includes extension-defined parameters')
     }
   }
+
   TestExtension.prototype.name = 'test_extension'
-  TestExtension.prototype.onExtendedHandshake = handshake => {
-    t.ok(handshake.m.test_extension, 'peer extended handshake includes extension name')
-    t.equal(handshake.hello.toString(), 'world!', 'peer extended handshake includes extension-defined parameters')
-  }
 
   const wire = new Protocol() // incoming
   wire.on('error', err => { t.fail(err) })
