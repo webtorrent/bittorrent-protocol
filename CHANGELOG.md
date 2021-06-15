@@ -1,3 +1,10 @@
+# [3.4.0](https://github.com/webtorrent/bittorrent-protocol/compare/v3.3.2...v3.4.0) (2021-06-15)
+
+
+### Features
+
+* PE/MSE Implementation for WebTorrent - update for new version ([#48](https://github.com/webtorrent/bittorrent-protocol/issues/48)) ([14f9d81](https://github.com/webtorrent/bittorrent-protocol/commit/14f9d81d07a0d49e4b9460c5392b88bdf0f7bf00))
+
 ## [3.3.2](https://github.com/webtorrent/bittorrent-protocol/compare/v3.3.1...v3.3.2) (2021-06-15)
 
 
