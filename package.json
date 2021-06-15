@@ -20,6 +20,8 @@
     "unordered-array-remove": "^1.0.2"
   },
   "devDependencies": {
+    "@webtorrent/semantic-release-config": "^1.0.5",
+    "semantic-release": "^17.4.3",
     "standard": "*",
     "tape": "5.2.2"
   },
@@ -60,5 +62,8 @@
     "extends": [
       "github>webtorrent/renovate-config"
     ]
+  },
+  "release": {
+    "extends": "@webtorrent/semantic-release-config"
   }
 }
