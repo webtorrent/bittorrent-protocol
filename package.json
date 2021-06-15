@@ -13,9 +13,12 @@
   "dependencies": {
     "bencode": "^2.0.1",
     "bitfield": "^4.0.0",
+    "buffer-xor": "^2.0.2",
     "debug": "^4.3.1",
     "randombytes": "^2.1.0",
+    "rc4": "^0.1.5",
     "readable-stream": "^3.6.0",
+    "simple-sha1": "^3.0.0",
     "speedometer": "^1.1.0",
     "unordered-array-remove": "^1.0.2"
   },
