@@ -30,7 +30,7 @@ const CRYPTO_PROVIDE = Buffer.from([0x00, 0x00, 0x01, 0x02])
 const CRYPTO_SELECT = Buffer.from([0x00, 0x00, 0x00, 0x02]) // always try to choose RC4 encryption instead of plaintext
 
 function xor (a, b) {
-  for (let i = 0, len = a.length; i < len; i++) a[i] = a[i] ^ b[i]
+  for (let len = a.length; len--;) a[len] = a[len] ^ b[len]
   return a
 }
 
