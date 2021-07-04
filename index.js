@@ -31,7 +31,7 @@ const CRYPTO_SELECT = Buffer.from([0x00, 0x00, 0x00, 0x02]) // always try to cho
 
 function xor (a, b) {
   for (let i = 0, len = a.length; i < len; i++) a[i] = a[i] ^ b[i]
-  return b
+  return a
 }
 
 class Request {
