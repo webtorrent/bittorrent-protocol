@@ -1,3 +1,5 @@
+## [3.4.2](https://github.com/webtorrent/bittorrent-protocol/compare/v3.4.1...v3.4.2) (2021-07-08)
+
 ## [3.4.1](https://github.com/webtorrent/bittorrent-protocol/compare/v3.4.0...v3.4.1) (2021-06-15)
 
 
