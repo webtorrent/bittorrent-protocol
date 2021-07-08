@@ -8,7 +8,6 @@ const randombytes = require('randombytes')
 const sha1 = require('simple-sha1')
 const speedometer = require('speedometer')
 const stream = require('readable-stream')
-const xor = require('buffer-xor')
 const RC4 = require('rc4')
 
 const BITFIELD_GROW = 400000
@@ -29,6 +28,11 @@ const DH_GENERATOR = 2
 const VC = Buffer.from([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
 const CRYPTO_PROVIDE = Buffer.from([0x00, 0x00, 0x01, 0x02])
 const CRYPTO_SELECT = Buffer.from([0x00, 0x00, 0x00, 0x02]) // always try to choose RC4 encryption instead of plaintext
+
+function xor (a, b) {
+  for (let len = a.length; len--;) a[len] ^= b[len]
+  return a
+}
 
 class Request {
   constructor (piece, offset, length, callback) {
@@ -599,7 +603,7 @@ class Wire extends stream.Duplex {
 
   _onPe3 (hashesXorBuffer) {
     const hash3 = sha1.sync(Buffer.from(this._utfToHex('req3') + this._sharedSecret, 'hex'))
-    const sKeyHash = xor(hashesXorBuffer, Buffer.from(hash3, 'hex')).toString('hex')
+    const sKeyHash = xor(Buffer.from(hash3, 'hex'), hashesXorBuffer).toString('hex')
     this.emit('pe3', sKeyHash)
   }
 
