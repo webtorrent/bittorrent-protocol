@@ -63,7 +63,8 @@
   "renovate": {
     "extends": [
       "github>webtorrent/renovate-config"
-    ]
+    ],
+    "rangeStrategy": "bump"
   },
   "release": {
     "extends": "@webtorrent/semantic-release-config"
