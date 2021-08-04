@@ -1,3 +1,10 @@
+## [3.4.3](https://github.com/webtorrent/bittorrent-protocol/compare/v3.4.2...v3.4.3) (2021-08-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency simple-sha1 to ^3.1.0 ([f3083f6](https://github.com/webtorrent/bittorrent-protocol/commit/f3083f687bf15d351654b2b4a44b3eab6b47188c))
+
 ## [3.4.2](https://github.com/webtorrent/bittorrent-protocol/compare/v3.4.1...v3.4.2) (2021-07-08)
 
 ## [3.4.1](https://github.com/webtorrent/bittorrent-protocol/compare/v3.4.0...v3.4.1) (2021-06-15)
