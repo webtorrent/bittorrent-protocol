@@ -165,7 +165,7 @@ class Wire extends stream.Duplex {
     if (this.destroyed) return
     this.destroyed = true
     this._debug('destroy')
-    this.emit('close')
+    this.emit('close', this.peerId)
     this.end()
   }
 
