@@ -12,6 +12,7 @@ const RC4 = require('rc4')
 
 const BITFIELD_GROW = 400000
 const KEEP_ALIVE_TIMEOUT = 55000
+const ALLOWED_FAST_SET_MAX_LENGTH = 100
 
 const MESSAGE_PROTOCOL = Buffer.from('\u0013BitTorrent protocol')
 const MESSAGE_KEEP_ALIVE = Buffer.from([0x00, 0x00, 0x00, 0x00])
@@ -22,6 +23,10 @@ const MESSAGE_UNINTERESTED = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x03])
 
 const MESSAGE_RESERVED = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 const MESSAGE_PORT = [0x00, 0x00, 0x00, 0x03, 0x09, 0x00, 0x00]
+
+// BEP6 Fast Extension
+const MESSAGE_HAVE_ALL = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x0E])
+const MESSAGE_HAVE_NONE = Buffer.from([0x00, 0x00, 0x00, 0x01, 0x0F])
 
 const DH_PRIME = 'ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a63a36210000000000090563'
 const DH_GENERATOR = 2
@@ -41,6 +46,18 @@ class Request {
     this.length = length
     this.callback = callback
   }
+}
+
+class HaveAllBitField {
+  constructor () {
+    this.buffer = new Uint8Array() // dummy
+  }
+
+  get (index) {
+    return true
+  }
+
+  set (index) {}
 }
 
 class Wire extends stream.Duplex {
@@ -65,6 +82,7 @@ class Wire extends stream.Duplex {
     // possible torrents but prevent malicious peers from growing bitfield to fill memory.
     this.peerPieces = new BitField(0, { grow: BITFIELD_GROW })
 
+    this.extensions = {}
     this.peerExtensions = {}
 
     this.requests = [] // outgoing
@@ -78,6 +96,11 @@ class Wire extends stream.Duplex {
     this.extendedHandshake = {}
 
     this.peerExtendedHandshake = {} // remote peer's extended handshake
+
+    // BEP6 Fast Estension
+    this.hasFast = false // is fast extension enabled?
+    this.allowedFastSet = [] // allowed fast set
+    this.peerAllowedFastSet = [] // peer's allowed fast set
 
     this._ext = {} // string -> function, ex 'ut_metadata' -> ut_metadata()
     this._nextExt = 1
@@ -308,13 +331,24 @@ class Wire extends stream.Duplex {
 
     const reserved = Buffer.from(MESSAGE_RESERVED)
 
-    // enable extended message
-    reserved[5] |= 0x10
+    this.extensions = {
+      extended: true,
+      dht: !!(extensions && extensions.dht),
+      fast: !!(extensions && extensions.fast)
+    }
 
-    if (extensions && extensions.dht) reserved[7] |= 1
+    reserved[5] |= 0x10 // enable extended message
+    if (this.extensions.dht) reserved[7] |= 0x01
+    if (this.extensions.fast) reserved[7] |= 0x04
 
     this._push(Buffer.concat([MESSAGE_PROTOCOL, reserved, infoHashBuffer, peerIdBuffer]))
     this._handshakeSent = true
+
+    // BEP6 Fast Extension: The extension is enabled only if both ends of the connection set this bit.
+    if (this.extensions.fast && this.peerExtensions.fast) {
+      this._debug('fast extension is enabled')
+      this.hasFast = true
+    }
 
     if (this.peerExtensions.extended && !this._extendedHandshakeSent) {
       // Peer's handshake indicated support already
@@ -350,10 +384,22 @@ class Wire extends stream.Duplex {
     if (this.amChoking) return
     this.amChoking = true
     this._debug('choke')
-    while (this.peerRequests.length) {
-      this.peerRequests.pop()
-    }
     this._push(MESSAGE_CHOKE)
+
+    if (this.hasFast) {
+      // BEP6: If a peer sends a choke, it MUST reject all requests from the peer to whom the choke
+      // was sent except it SHOULD NOT reject requests for pieces that are in the allowed fast set.
+      while (this.peerRequests.length) {
+        const request = this.peerRequests[0]
+        if (!this.allowedFastSet.includes(request.piece)) {
+          this.reject(request.piece, request.offset, request.length)
+        }
+      }
+    } else {
+      while (this.peerRequests.length) {
+        this.peerRequests.pop()
+      }
+    }
   }
 
   /**
@@ -415,7 +461,10 @@ class Wire extends stream.Duplex {
   request (index, offset, length, cb) {
     if (!cb) cb = () => {}
     if (this._finished) return cb(new Error('wire is closed'))
-    if (this.peerChoking) return cb(new Error('peer is choking'))
+
+    if (this.peerChoking && !(this.hasFast && this.peerAllowedFastSet.includes(index))) {
+      return cb(new Error('peer is choking'))
+    }
 
     this._debug('request index=%d offset=%d length=%d', index, offset, length)
 
@@ -465,6 +514,57 @@ class Wire extends stream.Duplex {
     const message = Buffer.from(MESSAGE_PORT)
     message.writeUInt16BE(port, 5)
     this._push(message)
+  }
+
+  /**
+   * Message: "suggest" <len=0x0005><id=0x0D><piece index> (BEP6)
+   * @param {number} index
+   */
+  suggest (index) {
+    this._debug('suggest %d', index)
+    this._message(0x0D, [index], null)
+  }
+
+  /**
+   * Message: "have-all" <len=0x0001><id=0x0E> (BEP6)
+   */
+  haveAll () {
+    if (!this.hasFast) throw Error('fast extension is disabled')
+    this._debug('have-all')
+    this._push(MESSAGE_HAVE_ALL)
+  }
+
+  /**
+   * Message: "have-none" <len=0x0001><id=0x0F> (BEP6)
+   */
+  haveNone () {
+    if (!this.hasFast) throw Error('fast extension is disabled')
+    this._debug('have-none')
+    this._push(MESSAGE_HAVE_NONE)
+  }
+
+  /**
+   * Message "reject": <len=0x000D><id=0x10><index><offset><length> (BEP6)
+   * @param  {number}   index
+   * @param  {number}   offset
+   * @param  {number}   length
+   */
+  reject (index, offset, length) {
+    if (!this.hasFast) throw Error('fast extension is disabled')
+    this._debug('reject index=%d offset=%d length=%d', index, offset, length)
+    this._pull(this.peerRequests, index, offset, length)
+    this._message(0x10, [index, offset, length], null)
+  }
+
+  /**
+   * Message: "allowed-fast" <len=0x0005><id=0x11><piece index> (BEP6)
+   * @param {number} index
+   */
+  allowedFast (index) {
+    if (!this.hasFast) throw Error('fast extension is disabled')
+    this._debug('allowed-fast %d', index)
+    if (!this.allowedFastSet.includes(index)) this.allowedFastSet.push(index)
+    this._message(0x11, [index], null)
   }
 
   /**
@@ -648,6 +748,12 @@ class Wire extends stream.Duplex {
     this.peerIdBuffer = peerIdBuffer
     this.peerExtensions = extensions
 
+    // BEP6 Fast Extension: The extension is enabled only if both ends of the connection set this bit.
+    if (this.extensions.fast && this.peerExtensions.fast) {
+      this._debug('fast extension is enabled')
+      this.hasFast = true
+    }
+
     this.emit('handshake', infoHash, peerId, extensions)
 
     for (const name in this._ext) {
@@ -665,8 +771,11 @@ class Wire extends stream.Duplex {
     this.peerChoking = true
     this._debug('got choke')
     this.emit('choke')
-    while (this.requests.length) {
-      this._callback(this.requests.pop(), new Error('peer is choking'), null)
+    if (!this.hasFast) {
+      // BEP6 Fast Extension: Choke no longer implicitly rejects all pending requests
+      while (this.requests.length) {
+        this._callback(this.requests.pop(), new Error('peer is choking'), null)
+      }
     }
   }
 
@@ -703,7 +812,12 @@ class Wire extends stream.Duplex {
   }
 
   _onRequest (index, offset, length) {
-    if (this.amChoking) return
+    if (this.amChoking && !(this.hasFast && this.allowedFastSet.includes(index))) {
+      // BEP6: If a peer receives a request from a peer its choking, the peer receiving
+      // the request SHOULD send a reject unless the piece is in the allowed fast set.
+      if (this.hasFast) this.reject(index, offset, length)
+      return
+    }
     this._debug('got request index=%d offset=%d length=%d', index, offset, length)
 
     const respond = (err, buffer) => {
@@ -735,6 +849,59 @@ class Wire extends stream.Duplex {
   _onPort (port) {
     this._debug('got port %d', port)
     this.emit('port', port)
+  }
+
+  _onSuggest (index) {
+    if (!this.hasFast) {
+      // BEP6: the peer MUST close the connection
+      this._debug('Error: got suggest whereas fast extension is disabled')
+      this.destroy()
+    }
+    this._debug('got suggest %d', index)
+    this.emit('suggest', index)
+  }
+
+  _onHaveAll () {
+    if (!this.hasFast) {
+      // BEP6: the peer MUST close the connection
+      this._debug('Error: got have-all whereas fast extension is disabled')
+      this.destroy()
+    }
+    this._debug('got have-all')
+    this.peerPieces = new HaveAllBitField()
+    this.emit('have-all')
+  }
+
+  _onHaveNone () {
+    if (!this.hasFast) {
+      // BEP6: the peer MUST close the connection
+      this._debug('Error: got have-none whereas fast extension is disabled')
+      this.destroy()
+    }
+    this._debug('got have-none')
+    this.emit('have-none')
+  }
+
+  _onReject (index, offset, length) {
+    if (!this.hasFast) {
+      // BEP6: the peer MUST close the connection
+      this._debug('Error: got reject whereas fast extension is disabled')
+      this.destroy()
+    }
+    this._debug('got reject index=%d offset=%d length=%d', index, offset, length)
+    this._callback(
+      this._pull(this.requests, index, offset, length),
+      new Error('request was rejected'),
+      null
+    )
+    this.emit('reject', index, offset, length)
+  }
+
+  _onAllowedFast (index) {
+    this._debug('got allowed-fast %d', index)
+    if (!this.peerAllowedFastSet.includes(index)) this.peerAllowedFastSet.push(index)
+    if (this.peerAllowedFastSet.length > ALLOWED_FAST_SET_MAX_LENGTH) this.peerAllowedFastSet.shift()
+    this.emit('allowed-fast', index)
   }
 
   _onExtended (ext, buf) {
@@ -932,6 +1099,20 @@ class Wire extends stream.Duplex {
         )
       case 9:
         return this._onPort(buffer.readUInt16BE(1))
+      case 0x0D:
+        return this._onSuggest(buffer.readUInt32BE(1))
+      case 0x0E:
+        return this._onHaveAll()
+      case 0x0F:
+        return this._onHaveNone()
+      case 0x10:
+        return this._onReject(
+          buffer.readUInt32BE(1),
+          buffer.readUInt32BE(5),
+          buffer.readUInt32BE(9)
+        )
+      case 0x11:
+        return this._onAllowedFast(buffer.readUInt32BE(1))
       case 20:
         return this._onExtended(buffer.readUInt8(1), buffer.slice(2))
       default:
@@ -1049,6 +1230,7 @@ class Wire extends stream.Duplex {
     handshake = handshake.slice(19)
     this._onHandshake(handshake.slice(8, 28), handshake.slice(28, 48), {
       dht: !!(handshake[7] & 0x01), // see bep_0005
+      fast: !!(handshake[7] & 0x04), // see bep_0006
       extended: !!(handshake[5] & 0x10) // see bep_0010
     })
     this._parse(4, this._onMessageLength)
