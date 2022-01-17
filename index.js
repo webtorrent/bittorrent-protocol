@@ -167,13 +167,14 @@ class Wire extends stream.Duplex {
     this._debug('destroy')
     this.emit('close')
     this.end()
+    return this
   }
 
   end (...args) {
     this._debug('end')
     this._onUninterested()
     this._onChoke()
-    super.end(...args)
+    return super.end(...args)
   }
 
   /**
