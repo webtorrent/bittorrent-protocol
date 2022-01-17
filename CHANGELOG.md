@@ -1,3 +1,10 @@
+# [3.5.0](https://github.com/webtorrent/bittorrent-protocol/compare/v3.4.5...v3.5.0) (2022-01-17)
+
+
+### Features
+
+* add BEP6 Fast Extension messages ([#75](https://github.com/webtorrent/bittorrent-protocol/issues/75)) ([319136d](https://github.com/webtorrent/bittorrent-protocol/commit/319136d7146135abfb25deade4ae5693d309e79f))
+
 ## [3.4.5](https://github.com/webtorrent/bittorrent-protocol/compare/v3.4.4...v3.4.5) (2022-01-17)
 
 
