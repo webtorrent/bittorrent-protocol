@@ -1,3 +1,10 @@
+## [3.4.5](https://github.com/webtorrent/bittorrent-protocol/compare/v3.4.4...v3.4.5) (2022-01-17)
+
+
+### Bug Fixes
+
+* return `this` from `destroy` and `end` ([#74](https://github.com/webtorrent/bittorrent-protocol/issues/74)) ([cba86e5](https://github.com/webtorrent/bittorrent-protocol/commit/cba86e5aff9492b45279cd6ded77e1af3db2c6b5))
+
 ## [3.4.4](https://github.com/webtorrent/bittorrent-protocol/compare/v3.4.3...v3.4.4) (2022-01-17)
 
 
