@@ -342,14 +342,14 @@ class Wire extends stream.Duplex {
     if (this.extensions.dht) reserved[7] |= 0x01
     if (this.extensions.fast) reserved[7] |= 0x04
 
-    this._push(Buffer.concat([MESSAGE_PROTOCOL, reserved, infoHashBuffer, peerIdBuffer]))
-    this._handshakeSent = true
-
     // BEP6 Fast Extension: The extension is enabled only if both ends of the connection set this bit.
     if (this.extensions.fast && this.peerExtensions.fast) {
       this._debug('fast extension is enabled')
       this.hasFast = true
     }
+
+    this._push(Buffer.concat([MESSAGE_PROTOCOL, reserved, infoHashBuffer, peerIdBuffer]))
+    this._handshakeSent = true
 
     if (this.peerExtensions.extended && !this._extendedHandshakeSent) {
       // Peer's handshake indicated support already

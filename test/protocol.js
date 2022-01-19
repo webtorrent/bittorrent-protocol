@@ -49,7 +49,6 @@ test('Asynchronous handshake + extended handshake', t => {
     t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
     t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
     t.equal(extensions.extended, true)
-    t.equal(wire1.hasFast, false)
   })
   wire1.on('extended', (ext, obj) => {
     if (ext === 'handshake') {
@@ -67,7 +66,6 @@ test('Asynchronous handshake + extended handshake', t => {
     t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
     t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
     t.equal(extensions.extended, true)
-    t.equal(wire2.hasFast, false)
 
     // Respond asynchronously
     process.nextTick(() => {
@@ -180,6 +178,58 @@ test('No duplicate `have` events for same piece', t => {
       t.equal(!!wire.peerPieces.get(0), true)
     })
   })
+})
+
+test('Fast Extension: handshake when unsupported', t => {
+  t.plan(4)
+
+  const wire1 = new Protocol()
+  const wire2 = new Protocol()
+  wire1.pipe(wire2).pipe(wire1)
+  wire1.on('error', err => { t.fail(err) })
+  wire2.on('error', err => { t.fail(err) })
+
+  wire1.on('handshake', (infoHash, peerId, extensions) => {
+    t.equal(extensions.fast, false)
+    t.equal(wire1.hasFast, false)
+    t.equal(wire2.hasFast, false)
+  })
+
+  wire2.on('handshake', (infoHash, peerId, extensions) => {
+    t.equal(extensions.fast, true)
+    // Respond asynchronously
+    process.nextTick(() => {
+      wire2.handshake(infoHash, peerId, { fast: false }) // no support
+    })
+  })
+
+  wire1.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'), { fast: true })
+})
+
+test('Fast Extension: handshake when supported', t => {
+  t.plan(4)
+
+  const wire1 = new Protocol()
+  const wire2 = new Protocol()
+  wire1.pipe(wire2).pipe(wire1)
+  wire1.on('error', err => { t.fail(err) })
+  wire2.on('error', err => { t.fail(err) })
+
+  wire1.on('handshake', (infoHash, peerId, extensions) => {
+    t.equal(extensions.fast, true)
+    t.equal(wire1.hasFast, true)
+    t.equal(wire2.hasFast, true)
+  })
+
+  wire2.on('handshake', (infoHash, peerId, extensions) => {
+    t.equal(extensions.fast, true)
+    // Respond asynchronously
+    process.nextTick(() => {
+      wire2.handshake(infoHash, peerId, { fast: true })
+    })
+  })
+
+  wire1.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'), { fast: true })
 })
 
 test('Fast Extension: have-all', t => {
