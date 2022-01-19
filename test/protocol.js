@@ -49,6 +49,7 @@ test('Asynchronous handshake + extended handshake', t => {
     t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
     t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
     t.equal(extensions.extended, true)
+    t.equal(wire1.hasFast, false)
   })
   wire1.on('extended', (ext, obj) => {
     if (ext === 'handshake') {
@@ -66,6 +67,7 @@ test('Asynchronous handshake + extended handshake', t => {
     t.equal(Buffer.from(infoHash, 'hex').toString(), '01234567890123456789')
     t.equal(Buffer.from(peerId, 'hex').toString(), '12345678901234567890')
     t.equal(extensions.extended, true)
+    t.equal(wire2.hasFast, false)
 
     // Respond asynchronously
     process.nextTick(() => {
@@ -340,4 +342,54 @@ test('Fast Extension: reject on error', t => {
   })
 
   wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'), { fast: true })
+})
+
+test('Fast Extension disabled: have-all', t => {
+  t.plan(3)
+  const wire = new Protocol()
+  t.equal(wire.hasFast, false)
+  t.throws(() => wire.haveAll())
+  wire.on('have-all', () => { t.fail() })
+  wire.on('close', () => { t.pass('wire closed') })
+  wire._onHaveAll()
+})
+
+test('Fast Extension disabled: have-none', t => {
+  t.plan(3)
+  const wire = new Protocol()
+  t.equal(wire.hasFast, false)
+  t.throws(() => wire.haveNone())
+  wire.on('have-none', () => { t.fail() })
+  wire.on('close', () => { t.pass('wire closed') })
+  wire._onHaveNone()
+})
+
+test('Fast Extension disabled: suggest', t => {
+  t.plan(3)
+  const wire = new Protocol()
+  t.equal(wire.hasFast, false)
+  t.throws(() => wire.suggest(42))
+  wire.on('suggest', () => { t.fail() })
+  wire.on('close', () => { t.pass('wire closed') })
+  wire._onSuggest(42)
+})
+
+test('Fast Extension disabled: allowed-fast', t => {
+  t.plan(3)
+  const wire = new Protocol()
+  t.equal(wire.hasFast, false)
+  t.throws(() => wire.allowedFast(42))
+  wire.on('allowed-fast', () => { t.fail() })
+  wire.on('close', () => { t.pass('wire closed') })
+  wire._onAllowedFast(42)
+})
+
+test('Fast Extension disabled: reject', t => {
+  t.plan(3)
+  const wire = new Protocol()
+  t.equal(wire.hasFast, false)
+  t.throws(() => wire.reject(42, 0, 99))
+  wire.on('reject', () => { t.fail() })
+  wire.on('close', () => { t.pass('wire closed') })
+  wire._onReject(42, 0, 99)
 })
