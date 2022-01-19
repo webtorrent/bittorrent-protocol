@@ -823,7 +823,11 @@ class Wire extends stream.Duplex {
 
     const respond = (err, buffer) => {
       if (request !== this._pull(this.peerRequests, index, offset, length)) return
-      if (err) return this._debug('error satisfying request index=%d offset=%d length=%d (%s)', index, offset, length, err.message)
+      if (err) {
+        this._debug('error satisfying request index=%d offset=%d length=%d (%s)', index, offset, length, err.message)
+        if (this.hasFast) this.reject(index, offset, length)
+        return
+      }
       this.piece(index, offset, buffer)
     }
 
