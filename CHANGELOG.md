@@ -1,3 +1,10 @@
+## [3.5.1](https://github.com/webtorrent/bittorrent-protocol/compare/v3.5.0...v3.5.1) (2022-01-20)
+
+
+### Bug Fixes
+
+* reject on error and activation guards for Fast Extension ([#79](https://github.com/webtorrent/bittorrent-protocol/issues/79)) ([d59075b](https://github.com/webtorrent/bittorrent-protocol/commit/d59075bbb13a3c1ef6baaa64601bf8d2f950bbc2))
+
 # [3.5.0](https://github.com/webtorrent/bittorrent-protocol/compare/v3.4.5...v3.5.0) (2022-01-17)
 
 
