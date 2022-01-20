@@ -200,6 +200,46 @@ wire.on('keep-alive', () => {
 	// peer sent a keep alive - just ignore it
 })
 ```
+### fast extension (BEP 6)
+
+This module has built-in support for the
+[BitTorrent Fast Extension (BEP 6)](http://www.bittorrent.org/beps/bep_0006.html).
+
+The Fast Extension introduces several messages to make the protocol more efficient:
+have-none, have-all, suggest, reject, and allowed-fast.
+
+```js
+wire.handshake(infoHash, peerId, { fast: true })
+
+wire.hasFast // true if Fast Extension is available, required to call the following methods
+
+wire.haveNone() // instead of wire.bitfield(buffer) with an all-zero buffer
+wire.on('have-none', () => {
+  // instead of bitfield with an all-zero buffer
+})
+
+wire.haveAll() // instead of wire.bitfield(buffer) with an all-one buffer
+wire.on('have-all', () => {
+  // instead of bitfield with an all-one buffer
+})
+
+wire.suggest(pieceIndex) // suggest requesting a piece to the peer
+wire.on('suggest', (pieceIndex) => {
+  // peer suggests requesting piece
+})
+
+wire.on('allowed-fast', (pieceIndex) => {
+  // piece may be obtained from peer while choked
+})
+
+wire.peerAllowedFastSet // list of allowed-fast pieces
+
+// Note rejection is handled automatically on choke or request error
+wire.reject(pieceIndex, offset, length) // reject a request
+wire.on('reject', (pieceIndex, offset, length) => {
+  // peer rejected a request
+})
+```
 
 ### extension protocol (BEP 10)
 
