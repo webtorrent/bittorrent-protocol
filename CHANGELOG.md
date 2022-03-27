@@ -1,3 +1,10 @@
+## [3.5.2](https://github.com/webtorrent/bittorrent-protocol/compare/v3.5.1...v3.5.2) (2022-03-27)
+
+
+### Bug Fixes
+
+* **deps:** update dependency debug to ^4.3.4 ([#85](https://github.com/webtorrent/bittorrent-protocol/issues/85)) ([117ecf3](https://github.com/webtorrent/bittorrent-protocol/commit/117ecf325714142f7643d8cedf434bc58faabb96))
+
 ## [3.5.1](https://github.com/webtorrent/bittorrent-protocol/compare/v3.5.0...v3.5.1) (2022-01-20)
 
 
