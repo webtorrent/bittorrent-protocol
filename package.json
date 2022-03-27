@@ -13,7 +13,7 @@
   "dependencies": {
     "bencode": "^2.0.2",
     "bitfield": "^4.0.0",
-    "debug": "^4.3.3",
+    "debug": "^4.3.4",
     "randombytes": "^2.1.0",
     "rc4": "^0.1.5",
     "readable-stream": "^3.6.0",
