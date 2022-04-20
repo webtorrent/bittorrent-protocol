@@ -390,10 +390,13 @@ class Wire extends stream.Duplex {
     if (this.hasFast) {
       // BEP6: If a peer sends a choke, it MUST reject all requests from the peer to whom the choke
       // was sent except it SHOULD NOT reject requests for pieces that are in the allowed fast set.
-      while (this.peerRequests.length) {
-        const request = this.peerRequests[0]
-        if (!this.allowedFastSet.includes(request.piece)) {
-          this.reject(request.piece, request.offset, request.length)
+      let allowedCount = 0
+      while (this.peerRequests.length > allowedCount) { // until only allowed requests are left
+        const request = this.peerRequests[allowedCount] // first non-allowed request
+        if (this.allowedFastSet.includes(request.piece)) {
+          ++allowedCount // count request as allowed
+        } else {
+          this.reject(request.piece, request.offset, request.length) // removes from this.peerRequests
         }
       }
     } else {
