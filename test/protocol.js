@@ -356,6 +356,43 @@ test('Fast Extension: reject on choke', t => {
   wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'), { fast: true })
 })
 
+test('Fast Extension: don\'t reject allowed-fast on choke', t => {
+  t.plan(11)
+
+  const wire = new Protocol()
+  wire.on('error', err => { t.fail(err) })
+  wire.pipe(wire)
+
+  wire.once('handshake', (infoHash, peerId, extensions) => {
+    t.equal(wire.extensions.fast, true)
+    t.equal(wire.peerExtensions.fast, true)
+    t.equal(wire.hasFast, true)
+    wire.allowedFast(6)
+    wire.unchoke()
+  })
+
+  wire.once('unchoke', () => {
+    t.equal(wire.requests.length, 0)
+    wire.request(6, 66, 666, (err, buffer) => {
+      t.fail(err)
+    })
+    t.equal(wire.requests.length, 1)
+    t.equal(wire.peerRequests.length, 0)
+  })
+
+  wire.on('request', (i, offset, length, callback) => {
+    t.equal(wire.peerRequests.length, 1)
+    t.equal(i, 6)
+    t.equal(offset, 66)
+    t.equal(length, 666)
+
+    wire.choke()
+    t.equal(wire.peerRequests.length, 1) // NOT rejected
+  })
+
+  wire.handshake(Buffer.from('01234567890123456789'), Buffer.from('12345678901234567890'), { fast: true })
+})
+
 test('Fast Extension: reject on error', t => {
   t.plan(12)
 
