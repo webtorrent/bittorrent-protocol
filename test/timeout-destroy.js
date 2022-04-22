@@ -1,5 +1,5 @@
-const Protocol = require('../')
-const test = require('tape')
+import test from 'tape'
+import Protocol from '../index.js'
 
 test('Timeout and destroy when peer does not respond', t => {
   t.plan(4)

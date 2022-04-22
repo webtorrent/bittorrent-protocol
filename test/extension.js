@@ -1,5 +1,5 @@
-const Protocol = require('../')
-const test = require('tape')
+import test from 'tape'
+import Protocol from '../index.js'
 
 test('Extension.prototype.name', t => {
   t.plan(2)
