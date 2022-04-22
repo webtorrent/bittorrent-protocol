@@ -1,3 +1,10 @@
+## [3.5.3](https://github.com/webtorrent/bittorrent-protocol/compare/v3.5.2...v3.5.3) (2022-04-22)
+
+
+### Bug Fixes
+
+* infinite loop when an allowed-fast request is pending on choke ([#88](https://github.com/webtorrent/bittorrent-protocol/issues/88)) ([a3d28da](https://github.com/webtorrent/bittorrent-protocol/commit/a3d28dac8bcf05af5dd12fe82dfbc7abeed4c55a))
+
 ## [3.5.2](https://github.com/webtorrent/bittorrent-protocol/compare/v3.5.1...v3.5.2) (2022-03-27)
 
 
