@@ -35,8 +35,8 @@ duplex streams | a.pipe(b).pipe(a)
 (Images from the ["harnessing streams"](https://github.com/substack/lxjs-stream-examples/blob/master/slides.markdown) talk by substack.)
 
 ```js
-const Protocol = require('bittorrent-protocol')
-const net = require('net')
+import Protocol from 'bittorrent-protocol'
+import net from 'net'
 
 net.createServer(socket => {
 	const wire = new Protocol()
@@ -305,9 +305,9 @@ Here is an example of the **ut_metadata** extension being used with
 **bittorrent-protocol**:
 
 ```js
-const Protocol = require('bittorrent-protocol')
-const net = require('net')
-const ut_metadata = require('ut_metadata')
+import Protocol from 'bittorrent-protocol'
+import net from 'net'
+import ut_metadata from 'ut_metadata'
 
 net.createServer(socket => {
   const wire = new Protocol()

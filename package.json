@@ -1,5 +1,6 @@
 {
   "name": "bittorrent-protocol",
+  "type": "module",
   "description": "Simple, robust, BitTorrent peer wire protocol implementation",
   "version": "3.5.3",
   "author": {
@@ -12,7 +13,7 @@
   },
   "dependencies": {
     "bencode": "^2.0.2",
-    "bitfield": "^4.0.0",
+    "bitfield": "^4.1.0",
     "debug": "^4.3.4",
     "randombytes": "^2.1.0",
     "rc4": "^0.1.5",
@@ -27,6 +28,12 @@
     "standard": "*",
     "tape": "5.5.3"
   },
+  "engines": {
+    "node": ">=12.20.0"
+  },
+  "exports": {
+    "import": "./index.js"
+  },
   "keywords": [
     "bittorrent",
     "p2p",
@@ -38,7 +45,6 @@
     "wire"
   ],
   "license": "MIT",
-  "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git://github.com/webtorrent/bittorrent-protocol.git"

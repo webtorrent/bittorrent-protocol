@@ -1,14 +1,16 @@
 /*! bittorrent-protocol. MIT License. WebTorrent LLC <https://webtorrent.io/opensource> */
-const arrayRemove = require('unordered-array-remove')
-const bencode = require('bencode')
-const BitField = require('bitfield').default
-const crypto = require('crypto')
-const debug = require('debug')('bittorrent-protocol')
-const randombytes = require('randombytes')
-const sha1 = require('simple-sha1')
-const speedometer = require('speedometer')
-const stream = require('readable-stream')
-const RC4 = require('rc4')
+import bencode from 'bencode'
+import BitField from 'bitfield'
+import crypto from 'crypto'
+import Debug from 'debug'
+import randombytes from 'randombytes'
+import RC4 from 'rc4'
+import stream from 'readable-stream'
+import sha1 from 'simple-sha1'
+import speedometer from 'speedometer'
+import arrayRemove from 'unordered-array-remove'
+
+const debug = Debug('bittorrent-protocol')
 
 const BITFIELD_GROW = 400000
 const KEEP_ALIVE_TIMEOUT = 55000
@@ -1353,4 +1355,4 @@ class Wire extends stream.Duplex {
   }
 }
 
-module.exports = Wire
+export default Wire
