@@ -1,3 +1,41 @@
+## [3.5.4](https://github.com/webtorrent/bittorrent-protocol/compare/v3.5.3...v3.5.4) (2022-04-28)
+
+
+### Code Refactoring
+
+* switch to ESM ([#90](https://github.com/webtorrent/bittorrent-protocol/issues/90)) ([fce2548](https://github.com/webtorrent/bittorrent-protocol/commit/fce254818590b307afb45a3fdaa8e4dc904305ce))
+
+
+### BREAKING CHANGES
+
+* ESM only
+
+* chore: update imports and export index.js
+
+esm import/export syntax
+Signed-off-by: Lakshya Singh <lakshay.singh1108@gmail.com>
+
+* chore: update imports in tests
+
+esm import syntax with path
+Signed-off-by: Lakshya Singh <lakshay.singh1108@gmail.com>
+
+* chore: bump bitfield for esm
+
+4.1.0 is esm based while 4.0.0 was commonjs
+Signed-off-by: Lakshya Singh <lakshay.singh1108@gmail.com>
+
+* chore: update package.json for esm
+
+specify minimum nodejs version for esm support
+exports defined
+type change to module
+Signed-off-by: Lakshya Singh <lakshay.singh1108@gmail.com>
+
+* chore: update readme with esm syntax
+
+Signed-off-by: Lakshya Singh <lakshay.singh1108@gmail.com>
+
 ## [3.5.3](https://github.com/webtorrent/bittorrent-protocol/compare/v3.5.2...v3.5.3) (2022-04-22)
 
 
