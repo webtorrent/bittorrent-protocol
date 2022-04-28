@@ -1,3 +1,15 @@
+# [4.0.0](https://github.com/webtorrent/bittorrent-protocol/compare/v3.5.4...v4.0.0) (2022-04-28)
+
+
+### chore
+
+* release 4 ([08f56ec](https://github.com/webtorrent/bittorrent-protocol/commit/08f56ec8323a4a51922192b98da2c76bb041f0c8))
+
+
+### BREAKING CHANGES
+
+* ESM only
+
 ## [3.5.4](https://github.com/webtorrent/bittorrent-protocol/compare/v3.5.3...v3.5.4) (2022-04-28)
 
 
