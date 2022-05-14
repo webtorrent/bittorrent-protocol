@@ -1,3 +1,10 @@
+## [4.0.1](https://github.com/webtorrent/bittorrent-protocol/compare/v4.0.0...v4.0.1) (2022-05-14)
+
+
+### Bug Fixes
+
+* replace speedometer with throughput ([#92](https://github.com/webtorrent/bittorrent-protocol/issues/92)) ([642ac8e](https://github.com/webtorrent/bittorrent-protocol/commit/642ac8e5e2823a7bf3be740246f9f15cf13f17d2))
+
 # [4.0.0](https://github.com/webtorrent/bittorrent-protocol/compare/v3.5.4...v4.0.0) (2022-04-28)
 
 
