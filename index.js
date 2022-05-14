@@ -7,7 +7,7 @@ import randombytes from 'randombytes'
 import RC4 from 'rc4'
 import stream from 'readable-stream'
 import sha1 from 'simple-sha1'
-import speedometer from 'speedometer'
+import throughput from 'throughput'
 import arrayRemove from 'unordered-array-remove'
 
 const debug = Debug('bittorrent-protocol')
@@ -109,8 +109,8 @@ class Wire extends stream.Duplex {
 
     this.uploaded = 0
     this.downloaded = 0
-    this.uploadSpeed = speedometer()
-    this.downloadSpeed = speedometer()
+    this.uploadSpeed = throughput()
+    this.downloadSpeed = throughput()
 
     this._keepAliveInterval = null
     this._timeout = null
