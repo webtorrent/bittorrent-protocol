@@ -18,14 +18,15 @@
     "randombytes": "^2.1.0",
     "rc4": "^0.1.5",
     "readable-stream": "^3.6.0",
-    "simple-sha1": "^3.1.0",
     "throughput": "^1.0.1",
+    "uint8-util": "^2.1.3",
     "unordered-array-remove": "^1.0.2"
   },
   "devDependencies": {
     "@webtorrent/semantic-release-config": "1.0.7",
     "semantic-release": "19.0.2",
     "standard": "*",
+    "tap-spec": "^5.0.0",
     "tape": "5.5.3"
   },
   "engines": {
@@ -50,7 +51,7 @@
     "url": "git://github.com/webtorrent/bittorrent-protocol.git"
   },
   "scripts": {
-    "test": "standard && tape test/*.js"
+    "test": "standard && tape test/*.js | tap-spec"
   },
   "funding": [
     {

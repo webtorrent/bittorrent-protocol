@@ -79,7 +79,7 @@ test('Extension.onMessage', t => {
     }
 
     onMessage (message) {
-      t.equal(message.toString(), 'hello world!', 'receives message sent with wire.extended()')
+      t.equal(Buffer.from(message).toString(), 'hello world!', 'receives message sent with wire.extended()')
     }
   }
 
