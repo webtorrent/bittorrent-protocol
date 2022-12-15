@@ -145,7 +145,7 @@ test('Request a piece', t => {
     wire.request(0, 1, 11, (err, buffer) => {
       t.equal(wire.requests.length, 0)
       t.ok(!err)
-      t.equal(buffer.toString(), 'hello world')
+      t.equal(Buffer.from(buffer).toString(), 'hello world')
     })
     t.equal(wire.requests.length, 1)
   })
