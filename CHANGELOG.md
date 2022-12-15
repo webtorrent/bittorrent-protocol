@@ -1,3 +1,10 @@
+# [4.1.0](https://github.com/webtorrent/bittorrent-protocol/compare/v4.0.1...v4.1.0) (2022-12-15)
+
+
+### Features
+
+* use uint8 instead of buffer ([#99](https://github.com/webtorrent/bittorrent-protocol/issues/99)) ([ad7de65](https://github.com/webtorrent/bittorrent-protocol/commit/ad7de65366fb5c89813a18356422f365bec0da50))
+
 ## [4.0.1](https://github.com/webtorrent/bittorrent-protocol/compare/v4.0.0...v4.0.1) (2022-05-14)
 
 
