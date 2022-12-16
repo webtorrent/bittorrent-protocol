@@ -27,7 +27,7 @@
     "semantic-release": "19.0.5",
     "standard": "*",
     "tap-spec": "^5.0.0",
-    "tape": "5.5.3"
+    "tape": "5.6.1"
   },
   "engines": {
     "node": ">=12.20.0"
