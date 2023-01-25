@@ -1,3 +1,10 @@
+## [4.1.2](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.1...v4.1.2) (2023-01-25)
+
+
+### Bug Fixes
+
+* **deps:** update dependency uint8-util to ^2.1.4 ([#100](https://github.com/webtorrent/bittorrent-protocol/issues/100)) ([b77b355](https://github.com/webtorrent/bittorrent-protocol/commit/b77b3555a4dc98dc41025d35420a0f0661cf574c))
+
 ## [4.1.1](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.0...v4.1.1) (2023-01-25)
 
 
