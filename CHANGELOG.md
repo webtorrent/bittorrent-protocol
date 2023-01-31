@@ -1,3 +1,10 @@
+## [4.1.5](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.4...v4.1.5) (2023-01-31)
+
+
+### Bug Fixes
+
+* **deps:** update dependency bencode to ^3.0.3 ([#108](https://github.com/webtorrent/bittorrent-protocol/issues/108)) ([580a15c](https://github.com/webtorrent/bittorrent-protocol/commit/580a15c1a53f9f7b3e8f9a04e3e176072d549323)), closes [#109](https://github.com/webtorrent/bittorrent-protocol/issues/109)
+
 ## [4.1.4](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.3...v4.1.4) (2023-01-31)
 
 
