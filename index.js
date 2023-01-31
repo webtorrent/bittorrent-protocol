@@ -6,7 +6,7 @@ import Debug from 'debug'
 import randombytes from 'randombytes'
 import RC4 from 'rc4'
 import stream from 'readable-stream'
-import { hash, concat, equal, hex2arr, arr2hex, text2arr } from 'uint8-util'
+import { hash, concat, equal, hex2arr, arr2hex, text2arr, arr2text } from 'uint8-util'
 import throughput from 'throughput'
 import arrayRemove from 'unordered-array-remove'
 
@@ -307,8 +307,8 @@ class Wire extends stream.Duplex {
 
   /**
    * Message: "handshake" <pstrlen><pstr><reserved><info_hash><peer_id>
-   * @param  {Buffer|string} infoHash (as Buffer or *hex* string)
-   * @param  {Buffer|string} peerId
+   * @param  {Uint8Array|string} infoHash (as Buffer or *hex* string)
+   * @param  {Uint8Array|string} peerId
    * @param  {Object} extensions
    */
   handshake (infoHash, peerId, extensions) {
@@ -488,7 +488,7 @@ class Wire extends stream.Duplex {
    * Message "piece": <len=0009+X><id=7><index><begin><block>
    * @param  {number} index
    * @param  {number} offset
-   * @param  {Buffer} buffer
+   * @param  {Uint8Array} buffer
    */
   piece (index, offset, buffer) {
     this._debug('piece index=%d offset=%d', index, offset)
@@ -973,7 +973,7 @@ class Wire extends stream.Duplex {
    * of bytes have arrived, determined by the last call to `this._parse(number, callback)`.
    * Once enough bytes have arrived to process the message, the callback function
    * (i.e. `this._parser`) gets called with the full buffer of data.
-   * @param  {Buffer} data
+   * @param  {Uint8Array} data
    * @param  {string} encoding
    * @param  {function} cb
    */
@@ -1068,7 +1068,7 @@ class Wire extends stream.Duplex {
   /**
    * Handle the first 4 bytes of a message, to determine the length of bytes that must be
    * waited for in order to have the whole message.
-   * @param  {Buffer} buffer
+   * @param  {Uint8Array} buffer
    */
   _onMessageLength (buffer) {
     const length = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength).getUint32(0)
@@ -1082,7 +1082,7 @@ class Wire extends stream.Duplex {
 
   /**
    * Handle a message from the remote peer.
-   * @param  {Buffer} buffer
+   * @param  {Uint8Array} buffer
    */
   _onMessage (buffer) {
     this._parse(4, this._onMessageLength)
@@ -1198,7 +1198,7 @@ class Wire extends stream.Duplex {
             this._onPe3Encrypted(vcBuffer, peerProvideBuffer, padCBuffer, iaBuffer)
             const pstrlen = iaLen ? iaBuffer[0] : null
             const protocol = iaLen ? iaBuffer.slice(1, 20) : null
-            if (pstrlen === 19 && protocol.toString() === 'BitTorrent protocol') {
+            if (pstrlen === 19 && arr2text(protocol) === 'BitTorrent protocol') {
               this._onHandshakeBuffer(iaBuffer.slice(1))
             } else {
               this._parseHandshake()
@@ -1243,8 +1243,8 @@ class Wire extends stream.Duplex {
 
   _onHandshakeBuffer (handshake) {
     const protocol = handshake.slice(0, 19)
-    if (protocol.toString() !== 'BitTorrent protocol') {
-      this._debug('Error: wire not speaking BitTorrent protocol (%s)', protocol.toString())
+    if (arr2text(protocol) !== 'BitTorrent protocol') {
+      this._debug('Error: wire not speaking BitTorrent protocol (%s)', arr2text(protocol))
       this.end()
       return
     }
