@@ -5,7 +5,7 @@ import crypto from 'crypto'
 import Debug from 'debug'
 import randombytes from 'randombytes'
 import RC4 from 'rc4'
-import stream from 'readable-stream'
+import { Duplex } from 'streamx'
 import sha1 from 'simple-sha1'
 import throughput from 'throughput'
 import arrayRemove from 'unordered-array-remove'
@@ -62,7 +62,7 @@ class HaveAllBitField {
   set (index) {}
 }
 
-class Wire extends stream.Duplex {
+class Wire extends Duplex {
   constructor (type = null, retries = 0, peEnabled = false) {
     super()
 
@@ -117,7 +117,6 @@ class Wire extends stream.Duplex {
     this._timeoutMs = 0
     this._timeoutExpiresAt = null
 
-    this.destroyed = false // was the wire ended by calling `destroy`?
     this._finished = false
 
     this._parserSize = 0 // number of needed bytes to parse next message from remote peer
@@ -188,18 +187,17 @@ class Wire extends stream.Duplex {
 
   destroy () {
     if (this.destroyed) return
-    this.destroyed = true
     this._debug('destroy')
-    this.emit('close')
     this.end()
     return this
   }
 
-  end (...args) {
+  end (data) {
+    if (this.destroyed || this.destroying) return
     this._debug('end')
     this._onUninterested()
     this._onChoke()
-    return super.end(...args)
+    return super.end(data)
   }
 
   /**
@@ -657,12 +655,6 @@ class Wire extends stream.Duplex {
   }
 
   /**
-   * Duplex stream method. Called whenever the remote peer stream wants data. No-op
-   * since we'll just push data whenever we get it.
-   */
-  _read () {}
-
-  /**
    * Send a message to the remote peer.
    */
   _message (id, numbers, data) {
@@ -975,10 +967,9 @@ class Wire extends stream.Duplex {
    * Once enough bytes have arrived to process the message, the callback function
    * (i.e. `this._parser`) gets called with the full buffer of data.
    * @param  {Buffer} data
-   * @param  {string} encoding
    * @param  {function} cb
    */
-  _write (data, encoding, cb) {
+  _write (data, cb) {
     if (this._encryptionMethod === 2 && this._cryptoHandshakeDone) {
       data = this._decrypt(data)
     }
