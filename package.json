@@ -15,7 +15,6 @@
     "bencode": "^3.0.3",
     "bitfield": "^4.1.0",
     "debug": "^4.3.4",
-    "randombytes": "^2.1.0",
     "rc4": "^0.1.5",
     "streamx": "^2.12.5",
     "throughput": "^1.0.1",

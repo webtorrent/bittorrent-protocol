@@ -3,10 +3,9 @@ import bencode from 'bencode'
 import BitField from 'bitfield'
 import crypto from 'crypto'
 import Debug from 'debug'
-import randombytes from 'randombytes'
 import RC4 from 'rc4'
 import { Duplex } from 'streamx'
-import { hash, concat, equal, hex2arr, arr2hex, text2arr, arr2text } from 'uint8-util'
+import { hash, concat, equal, hex2arr, arr2hex, text2arr, arr2text, randomBytes } from 'uint8-util'
 import throughput from 'throughput'
 import arrayRemove from 'unordered-array-remove'
 
@@ -66,7 +65,7 @@ class Wire extends Duplex {
   constructor (type = null, retries = 0, peEnabled = false) {
     super()
 
-    this._debugId = arr2hex(randombytes(4))
+    this._debugId = arr2hex(randomBytes(4))
     this._debug('new wire')
 
     this.peerId = null // remote peer id (hex string)
@@ -248,14 +247,14 @@ class Wire extends Duplex {
   sendPe1 () {
     if (this._peEnabled) {
       const padALen = Math.floor(Math.random() * 513)
-      const padA = randombytes(padALen)
+      const padA = randomBytes(padALen)
       this._push(concat([hex2arr(this._myPubKey), padA]))
     }
   }
 
   sendPe2 () {
     const padBLen = Math.floor(Math.random() * 513)
-    const padB = randombytes(padBLen)
+    const padB = randomBytes(padBLen)
     this._push(concat([hex2arr(this._myPubKey), padB]))
   }
 
@@ -268,8 +267,8 @@ class Wire extends Duplex {
     const hash3Buffer = await hash(hex2arr(this._utfToHex('req3') + this._sharedSecret))
     const hashesXorBuffer = xor(hash2Buffer, hash3Buffer)
 
-    const padCLen = new DataView(randombytes(2).buffer).getUint16(0) % 512
-    const padCBuffer = randombytes(padCLen)
+    const padCLen = new DataView(randomBytes(2).buffer).getUint16(0) % 512
+    const padCBuffer = randomBytes(padCLen)
 
     let vcAndProvideBuffer = new Uint8Array(8 + 4 + 2 + padCLen + 2)
     vcAndProvideBuffer.set(VC)
@@ -288,8 +287,8 @@ class Wire extends Duplex {
   async sendPe4 (infoHash) {
     await this.setEncrypt(this._sharedSecret, infoHash)
 
-    const padDLen = new DataView(randombytes(2).buffer).getUint16(0) % 512
-    const padDBuffer = randombytes(padDLen)
+    const padDLen = new DataView(randomBytes(2).buffer).getUint16(0) % 512
+    const padDBuffer = randomBytes(padDLen)
     let vcAndSelectBuffer = new Uint8Array(8 + 4 + 2 + padDLen)
     const view = new DataView(vcAndSelectBuffer.buffer)
 
