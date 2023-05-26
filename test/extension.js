@@ -51,7 +51,7 @@ test('Extension.onExtendedHandshake', t => {
 
     onExtendedHandshake (handshake) {
       t.ok(handshake.m.test_extension, 'peer extended handshake includes extension name')
-      t.equal(handshake.hello.toString(), 'world!', 'peer extended handshake includes extension-defined parameters')
+      t.equal(Buffer.from(handshake.hello).toString(), 'world!', 'peer extended handshake includes extension-defined parameters')
     }
   }
 
@@ -79,7 +79,7 @@ test('Extension.onMessage', t => {
     }
 
     onMessage (message) {
-      t.equal(message.toString(), 'hello world!', 'receives message sent with wire.extended()')
+      t.equal(Buffer.from(message).toString(), 'hello world!', 'receives message sent with wire.extended()')
     }
   }
 

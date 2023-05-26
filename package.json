@@ -2,7 +2,7 @@
   "name": "bittorrent-protocol",
   "type": "module",
   "description": "Simple, robust, BitTorrent peer wire protocol implementation",
-  "version": "4.0.1",
+  "version": "4.1.6",
   "author": {
     "name": "WebTorrent LLC",
     "email": "feross@webtorrent.io",
@@ -12,22 +12,22 @@
     "url": "https://github.com/webtorrent/bittorrent-protocol/issues"
   },
   "dependencies": {
-    "bencode": "^2.0.2",
+    "bencode": "^3.0.3",
     "bitfield": "^4.1.0",
     "debug": "^4.3.4",
     "randombytes": "^2.1.0",
     "rc4": "^0.1.5",
-    "simple-sha1": "^3.1.0",
     "streamx": "^2.12.5",
     "throughput": "^1.0.1",
+    "uint8-util": "^2.1.7",
     "unordered-array-remove": "^1.0.2"
   },
   "devDependencies": {
-    "@webtorrent/semantic-release-config": "1.0.7",
-    "semantic-release": "19.0.2",
+    "@webtorrent/semantic-release-config": "1.0.8",
+    "semantic-release": "20.1.0",
     "standard": "*",
     "tap-spec": "^5.0.0",
-    "tape": "5.5.3"
+    "tape": "5.6.3"
   },
   "engines": {
     "node": ">=12.20.0"

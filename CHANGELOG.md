@@ -1,3 +1,52 @@
+## [4.1.6](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.5...v4.1.6) (2023-01-31)
+
+
+### Bug Fixes
+
+* **deps:** update dependency uint8-util to ^2.1.7 ([#106](https://github.com/webtorrent/bittorrent-protocol/issues/106)) ([78b0f4a](https://github.com/webtorrent/bittorrent-protocol/commit/78b0f4af8753bba4bb46cf812c96f2c2bd013365))
+
+## [4.1.5](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.4...v4.1.5) (2023-01-31)
+
+
+### Bug Fixes
+
+* **deps:** update dependency bencode to ^3.0.3 ([#108](https://github.com/webtorrent/bittorrent-protocol/issues/108)) ([580a15c](https://github.com/webtorrent/bittorrent-protocol/commit/580a15c1a53f9f7b3e8f9a04e3e176072d549323)), closes [#109](https://github.com/webtorrent/bittorrent-protocol/issues/109)
+
+## [4.1.4](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.3...v4.1.4) (2023-01-31)
+
+
+### Bug Fixes
+
+* **deps:** update dependency bencode to ^3.0.2 ([f1582e5](https://github.com/webtorrent/bittorrent-protocol/commit/f1582e56c342e4a75c9ba134b3ecd53affaab77b))
+
+## [4.1.3](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.2...v4.1.3) (2023-01-26)
+
+
+### Bug Fixes
+
+* **deps:** update dependency uint8-util to ^2.1.5 ([#105](https://github.com/webtorrent/bittorrent-protocol/issues/105)) ([d16dbdd](https://github.com/webtorrent/bittorrent-protocol/commit/d16dbdd5536e61e5d2cd045286e44fbcdd9064e2))
+
+## [4.1.2](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.1...v4.1.2) (2023-01-25)
+
+
+### Bug Fixes
+
+* **deps:** update dependency uint8-util to ^2.1.4 ([#100](https://github.com/webtorrent/bittorrent-protocol/issues/100)) ([b77b355](https://github.com/webtorrent/bittorrent-protocol/commit/b77b3555a4dc98dc41025d35420a0f0661cf574c))
+
+## [4.1.1](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.0...v4.1.1) (2023-01-25)
+
+
+### Bug Fixes
+
+* **deps:** update dependency bencode to v3 ([#101](https://github.com/webtorrent/bittorrent-protocol/issues/101)) ([32e02d1](https://github.com/webtorrent/bittorrent-protocol/commit/32e02d14b533c77891b429a1d52135ade47dada8))
+
+# [4.1.0](https://github.com/webtorrent/bittorrent-protocol/compare/v4.0.1...v4.1.0) (2022-12-15)
+
+
+### Features
+
+* use uint8 instead of buffer ([#99](https://github.com/webtorrent/bittorrent-protocol/issues/99)) ([ad7de65](https://github.com/webtorrent/bittorrent-protocol/commit/ad7de65366fb5c89813a18356422f365bec0da50))
+
 ## [4.0.1](https://github.com/webtorrent/bittorrent-protocol/compare/v4.0.0...v4.0.1) (2022-05-14)
 
 
