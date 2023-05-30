@@ -18,7 +18,7 @@
     "rc4": "^0.1.5",
     "streamx": "^2.13.2",
     "throughput": "^1.0.1",
-    "uint8-util": "^2.1.7",
+    "uint8-util": "^2.1.9",
     "unordered-array-remove": "^1.0.2"
   },
   "devDependencies": {
