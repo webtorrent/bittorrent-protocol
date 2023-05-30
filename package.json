@@ -16,7 +16,7 @@
     "bitfield": "^4.1.0",
     "debug": "^4.3.4",
     "rc4": "^0.1.5",
-    "streamx": "^2.12.5",
+    "streamx": "^2.13.2",
     "throughput": "^1.0.1",
     "uint8-util": "^2.1.7",
     "unordered-array-remove": "^1.0.2"
