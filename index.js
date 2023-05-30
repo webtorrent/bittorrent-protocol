@@ -3,10 +3,9 @@ import bencode from 'bencode'
 import BitField from 'bitfield'
 import crypto from 'crypto'
 import Debug from 'debug'
-import randombytes from 'randombytes'
 import RC4 from 'rc4'
-import stream from 'readable-stream'
-import { hash, concat, equal, hex2arr, arr2hex, text2arr, arr2text } from 'uint8-util'
+import { Duplex } from 'streamx'
+import { hash, concat, equal, hex2arr, arr2hex, text2arr, arr2text, randomBytes } from 'uint8-util'
 import throughput from 'throughput'
 import arrayRemove from 'unordered-array-remove'
 
@@ -62,11 +61,11 @@ class HaveAllBitField {
   set (index) {}
 }
 
-class Wire extends stream.Duplex {
+class Wire extends Duplex {
   constructor (type = null, retries = 0, peEnabled = false) {
     super()
 
-    this._debugId = arr2hex(randombytes(4))
+    this._debugId = arr2hex(randomBytes(4))
     this._debug('new wire')
 
     this.peerId = null // remote peer id (hex string)
@@ -117,7 +116,6 @@ class Wire extends stream.Duplex {
     this._timeoutMs = 0
     this._timeoutExpiresAt = null
 
-    this.destroyed = false // was the wire ended by calling `destroy`?
     this._finished = false
 
     this._parserSize = 0 // number of needed bytes to parse next message from remote peer
@@ -188,18 +186,17 @@ class Wire extends stream.Duplex {
 
   destroy () {
     if (this.destroyed) return
-    this.destroyed = true
     this._debug('destroy')
-    this.emit('close')
     this.end()
     return this
   }
 
-  end (...args) {
+  end (data) {
+    if (this.destroyed || this.destroying) return
     this._debug('end')
     this._onUninterested()
     this._onChoke()
-    return super.end(...args)
+    return super.end(data)
   }
 
   /**
@@ -250,14 +247,14 @@ class Wire extends stream.Duplex {
   sendPe1 () {
     if (this._peEnabled) {
       const padALen = Math.floor(Math.random() * 513)
-      const padA = randombytes(padALen)
+      const padA = randomBytes(padALen)
       this._push(concat([hex2arr(this._myPubKey), padA]))
     }
   }
 
   sendPe2 () {
     const padBLen = Math.floor(Math.random() * 513)
-    const padB = randombytes(padBLen)
+    const padB = randomBytes(padBLen)
     this._push(concat([hex2arr(this._myPubKey), padB]))
   }
 
@@ -270,8 +267,8 @@ class Wire extends stream.Duplex {
     const hash3Buffer = await hash(hex2arr(this._utfToHex('req3') + this._sharedSecret))
     const hashesXorBuffer = xor(hash2Buffer, hash3Buffer)
 
-    const padCLen = new DataView(randombytes(2).buffer).getUint16(0) % 512
-    const padCBuffer = randombytes(padCLen)
+    const padCLen = new DataView(randomBytes(2).buffer).getUint16(0) % 512
+    const padCBuffer = randomBytes(padCLen)
 
     let vcAndProvideBuffer = new Uint8Array(8 + 4 + 2 + padCLen + 2)
     vcAndProvideBuffer.set(VC)
@@ -290,8 +287,8 @@ class Wire extends stream.Duplex {
   async sendPe4 (infoHash) {
     await this.setEncrypt(this._sharedSecret, infoHash)
 
-    const padDLen = new DataView(randombytes(2).buffer).getUint16(0) % 512
-    const padDBuffer = randombytes(padDLen)
+    const padDLen = new DataView(randomBytes(2).buffer).getUint16(0) % 512
+    const padDBuffer = randomBytes(padDLen)
     let vcAndSelectBuffer = new Uint8Array(8 + 4 + 2 + padDLen)
     const view = new DataView(vcAndSelectBuffer.buffer)
 
@@ -655,12 +652,6 @@ class Wire extends stream.Duplex {
   }
 
   /**
-   * Duplex stream method. Called whenever the remote peer stream wants data. No-op
-   * since we'll just push data whenever we get it.
-   */
-  _read () {}
-
-  /**
    * Send a message to the remote peer.
    */
   _message (id, numbers, data) {
@@ -974,10 +965,9 @@ class Wire extends stream.Duplex {
    * Once enough bytes have arrived to process the message, the callback function
    * (i.e. `this._parser`) gets called with the full buffer of data.
    * @param  {Uint8Array} data
-   * @param  {string} encoding
    * @param  {function} cb
    */
-  _write (data, encoding, cb) {
+  _write (data, cb) {
     if (this._encryptionMethod === 2 && this._cryptoHandshakeDone) {
       data = this._decrypt(data)
     }

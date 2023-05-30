@@ -55,9 +55,11 @@ test('Asynchronous handshake + extended handshake', t => {
       eventLog.push('w1 ex')
       t.ok(obj)
 
-      // Last step: ensure handshakes came before extension protocol
-      t.deepEqual(eventLog, ['w2 hs', 'w1 hs', 'w2 ex', 'w1 ex'])
-      t.end()
+      queueMicrotask(() => {
+        // Last step: ensure handshakes came before extension protocol
+        t.deepEqual(eventLog, ['w2 hs', 'w1 hs', 'w1 ex', 'w2 ex'])
+        t.end()
+      })
     }
   })
 
@@ -68,7 +70,7 @@ test('Asynchronous handshake + extended handshake', t => {
     t.equal(extensions.extended, true)
 
     // Respond asynchronously
-    process.nextTick(() => {
+    queueMicrotask(() => {
       wire2.handshake(infoHash, peerId)
     })
   })
@@ -169,11 +171,11 @@ test('No duplicate `have` events for same piece', t => {
   t.equal(haveEvents, 0)
   t.equal(!!wire.peerPieces.get(0), false)
   wire.have(0)
-  process.nextTick(() => {
+  queueMicrotask(() => {
     t.equal(haveEvents, 1, 'emitted event for new piece')
     t.equal(!!wire.peerPieces.get(0), true)
     wire.have(0)
-    process.nextTick(() => {
+    queueMicrotask(() => {
       t.equal(haveEvents, 1, 'not emitted event for preexisting piece')
       t.equal(!!wire.peerPieces.get(0), true)
     })
@@ -198,7 +200,7 @@ test('Fast Extension: handshake when unsupported', t => {
   wire2.on('handshake', (infoHash, peerId, extensions) => {
     t.equal(extensions.fast, true)
     // Respond asynchronously
-    process.nextTick(() => {
+    queueMicrotask(() => {
       wire2.handshake(infoHash, peerId, { fast: false }) // no support
     })
   })
@@ -224,7 +226,7 @@ test('Fast Extension: handshake when supported', t => {
   wire2.on('handshake', (infoHash, peerId, extensions) => {
     t.equal(extensions.fast, true)
     // Respond asynchronously
-    process.nextTick(() => {
+    queueMicrotask(() => {
       wire2.handshake(infoHash, peerId, { fast: true })
     })
   })
