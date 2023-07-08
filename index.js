@@ -143,19 +143,16 @@ class Wire extends Duplex {
     this._decryptGenerator = null // RC4 keystream generator for decryption
     this._setGenerators = false // a flag for whether setEncrypt() has successfully completed
 
-    this.once('finish', () => this._onFinish())
-
-    this.on('finish', this._onFinish)
     this._debug('type:', this.type)
 
-    if (this.type === 'tcpIncoming' && this._peEnabled) {
+    if (this._peEnabled && (this.type === 'tcpIncoming' || this.type === 'utpIncoming')) {
       // If we are not the initiator, we should wait to see if the client begins
       // with PE/MSE handshake or the standard bittorrent handshake.
       this._determineHandshakeType()
-    } else if (this.type === 'tcpOutgoing' && this._peEnabled && retries === 0) {
+    } else if (this._peEnabled && retries === 0 && (this.type === 'tcpOutgoing' || this.type === 'utpOutgoing')) {
       this._parsePe2()
     } else {
-      this._parseHandshake(null)
+      this._parseHandshake()
     }
   }
 
@@ -186,6 +183,7 @@ class Wire extends Duplex {
 
   destroy () {
     if (this.destroyed) return
+    clearInterval(this._keepAliveInterval)
     this._debug('destroy')
     this.end()
     return this
@@ -277,7 +275,7 @@ class Wire extends Duplex {
     const view = new DataView(vcAndProvideBuffer.buffer)
 
     view.setInt16(12, padCLen) // pad C length
-    padCBuffer.copy(vcAndProvideBuffer, 14)
+    vcAndProvideBuffer.set(padCBuffer, 14) // pad C
     view.setInt16(14 + padCLen, 0) // IA length
     vcAndProvideBuffer = this._encryptHandshake(vcAndProvideBuffer)
 
@@ -327,8 +325,9 @@ class Wire extends Duplex {
 
     this._infoHash = infoHashBuffer
 
-    if (infoHashBuffer.length !== 20 || peerIdBuffer.length !== 20) {
-      throw new Error('infoHash and peerId MUST have length 20')
+    // peerId can be set manually through WebTorrent option
+    if (infoHashBuffer.length !== 20) {
+      throw new Error('infoHash MUST have length 20')
     }
 
     this._debug('handshake i=%s p=%s exts=%o', infoHash, peerId, extensions)
@@ -609,6 +608,7 @@ class Wire extends Duplex {
     let decryptKeyBuf
     let decryptKeyIntArray
     switch (this.type) {
+      case 'utpIncoming':
       case 'tcpIncoming':
         encryptKeyBuf = await hash(hex2arr(this._utfToHex('keyB') + sharedSecret + infoHash))
         decryptKeyBuf = await hash(hex2arr(this._utfToHex('keyA') + sharedSecret + infoHash))
@@ -623,6 +623,7 @@ class Wire extends Duplex {
         this._encryptGenerator = new RC4(encryptKeyIntArray)
         this._decryptGenerator = new RC4(decryptKeyIntArray)
         break
+      case 'utpOutgoing':
       case 'tcpOutgoing':
         encryptKeyBuf = await hash(hex2arr(this._utfToHex('keyA') + sharedSecret + infoHash))
         decryptKeyBuf = await hash(hex2arr(this._utfToHex('keyB') + sharedSecret + infoHash))
@@ -648,6 +649,7 @@ class Wire extends Duplex {
     }
 
     this._setGenerators = true
+    this.emit('generators-set')
     return true
   }
 
@@ -699,8 +701,8 @@ class Wire extends Duplex {
   }
 
   async _onPe3 (hashesXorBuffer) {
-    const hash3 = await (arr2hex(this._utfToHex('req3') + this._sharedSecret))
-    const sKeyHash = arr2hex(xor(hash3, hashesXorBuffer))
+    const hash3Buffer = await hash(hex2arr(this._utfToHex('req3') + this._sharedSecret))
+    const sKeyHash = arr2hex(xor(hash3Buffer, hashesXorBuffer))
     this.emit('pe3', sKeyHash)
   }
 
@@ -722,6 +724,8 @@ class Wire extends Duplex {
       this._debug('Error: RC4 encryption method not provided by peer')
       this.destroy()
     }
+    this._cryptoHandshakeDone = true
+    this._debug('crypto handshake done')
   }
 
   _onPe4 (peerSelectBuffer) {
@@ -978,7 +982,8 @@ class Wire extends Duplex {
     }
     // now this._buffer is an array containing a single Buffer
     if (this._cryptoSyncPattern) {
-      const index = this._buffer[0].indexOf(this._cryptoSyncPattern)
+      // convert to Buffer for finding arrays of bytes with indexOf
+      const index = Buffer.from(this._buffer[0]).indexOf(this._cryptoSyncPattern)
       if (index !== -1) {
         this._buffer[0] = this._buffer[0].slice(index + this._cryptoSyncPattern.length)
         this._bufferSize -= (index + this._cryptoSyncPattern.length)
@@ -1145,6 +1150,7 @@ class Wire extends Duplex {
 
   _parsePe1 (pubKeyPrefix) {
     this._parse(95, pubKeySuffix => {
+      this._parse(Number.MAX_VALUE, () => {})
       this._onPe1(concat([pubKeyPrefix, pubKeySuffix]))
       this._parsePe3()
     })
@@ -1152,10 +1158,10 @@ class Wire extends Duplex {
 
   _parsePe2 () {
     this._parse(96, pubKey => {
+      this._parse(Number.MAX_VALUE, () => {})
       this._onPe2(pubKey)
-      while (!this._setGenerators) {
-        // Wait until generators have been set
-      }
+    })
+    this.once('generators-set', () => {
       this._parsePe4()
     })
   }
@@ -1165,12 +1171,12 @@ class Wire extends Duplex {
     const hash1Buffer = await hash(hex2arr(this._utfToHex('req1') + this._sharedSecret))
     // synchronize on HASH('req1', S)
     this._parseUntil(hash1Buffer, 512)
-    this._parse(20, buffer => {
-      this._onPe3(buffer)
-      while (!this._setGenerators) {
-        // Wait until generators have been set
-      }
+    this.once('generators-set', () => {
       this._parsePe3Encrypted()
+    })
+    this._parse(20, buffer => {
+      this._parse(Number.MAX_VALUE, () => {})
+      this._onPe3(buffer)
     })
   }
 
@@ -1183,23 +1189,33 @@ class Wire extends Duplex {
         padCBuffer = this._decryptHandshake(padCBuffer)
         this._parse(2, iaLenBuf => {
           const iaLen = new DataView(this._decryptHandshake(iaLenBuf).buffer).getUint16(0)
-          this._parse(iaLen, iaBuffer => {
-            iaBuffer = this._decryptHandshake(iaBuffer)
-            this._onPe3Encrypted(vcBuffer, peerProvideBuffer, padCBuffer, iaBuffer)
-            const pstrlen = iaLen ? iaBuffer[0] : null
-            const protocol = iaLen ? iaBuffer.slice(1, 20) : null
-            if (pstrlen === 19 && arr2text(protocol) === 'BitTorrent protocol') {
-              this._onHandshakeBuffer(iaBuffer.slice(1))
-            } else {
-              this._parseHandshake()
-            }
-          })
+          // iaLen "may be 0-sized if you want to wait for the encryption negotation"
+          if (iaLen) {
+            this._parse(iaLen, iaBuffer => {
+              iaBuffer = this._decryptHandshake(iaBuffer)
+              this._onPe3Encrypted(vcBuffer, peerProvideBuffer)
+              const pstrlen = iaLen ? iaBuffer[0] : null
+              const protocol = iaLen ? iaBuffer.slice(1, 20) : null
+              if (pstrlen === 19 && arr2text(protocol) === 'BitTorrent protocol') {
+                if (iaBuffer.length > 20) {
+                  this._onHandshakeBuffer(iaBuffer.slice(1))
+                }
+              } else {
+                this._parseHandshake()
+              }
+            })
+          } else {
+            // parseHandshake always expects plain data
+            this._buffer[0] = this._decryptHandshake(this._buffer[0])
+            this._onPe3Encrypted(vcBuffer, peerProvideBuffer)
+            this._parseHandshake()
+          }
         })
       })
     })
   }
 
-  _parsePe4 () {
+ _parsePe4 () {
     // synchronize on ENCRYPT(VC).
     // since we encrypt using bitwise xor, decryption and encryption are the same operation.
     // calling _decryptHandshake here advances the decrypt generator keystream forward 8 bytes
@@ -1209,9 +1225,32 @@ class Wire extends Duplex {
       const peerSelectBuffer = this._decryptHandshake(buffer.slice(0, 4))
       const padDLen = new DataView(this._decryptHandshake(buffer.slice(4, 6)).buffer).getUint16(0)
       this._parse(padDLen, padDBuf => {
-        this._decryptHandshake(padDBuf)
+        padDBuf = this._decryptHandshake(padDBuf)
         this._onPe4(peerSelectBuffer)
-        this._parseHandshake(null)
+        this._parse(1, buffer => {
+          const pstrlen = buffer[0]
+          if (pstrlen === 19) {
+            this._parse(pstrlen + 48, this._onHandshakeBuffer)
+          } else {
+            const buf2 = this._decryptHandshake(buffer)
+            const pstrlen2 = buf2[0]
+            if (pstrlen2 === 19) {
+              this._parse(67, buf3 => {
+                buf3 = this._decryptHandshake(buf3)
+                const protocol = buf3.slice(0, 19)
+                if (arr2text(protocol) !== 'BitTorrent protocol') {
+                  this._debug('Error: wire not speaking BitTorrent protocol (%s)', arr2text(protocol))
+                  this.end()
+                  return
+                }
+                this._onHandshakeBuffer(buf3)
+              })
+            } else {
+              this.end()
+              return
+            }
+          }
+        })
       })
     })
   }
@@ -1221,6 +1260,7 @@ class Wire extends Duplex {
    */
   _parseHandshake () {
     this._parse(1, buffer => {
+      this._parse(Number.MAX_VALUE, () => {})
       const pstrlen = buffer[0]
       if (pstrlen !== 19) {
         this._debug('Error: wire not speaking BitTorrent protocol (%s)', pstrlen.toString())
