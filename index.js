@@ -1215,7 +1215,7 @@ class Wire extends Duplex {
     })
   }
 
- _parsePe4 () {
+  _parsePe4 () {
     // synchronize on ENCRYPT(VC).
     // since we encrypt using bitwise xor, decryption and encryption are the same operation.
     // calling _decryptHandshake here advances the decrypt generator keystream forward 8 bytes
@@ -1247,7 +1247,6 @@ class Wire extends Duplex {
               })
             } else {
               this.end()
-              return
             }
           }
         })
