@@ -143,6 +143,8 @@ class Wire extends Duplex {
     this._decryptGenerator = null // RC4 keystream generator for decryption
     this._setGenerators = false // a flag for whether setEncrypt() has successfully completed
 
+    this.once('finish', () => this._onFinish())
+
     this._debug('type:', this.type)
 
     if (this._peEnabled && (this.type === 'tcpIncoming' || this.type === 'utpIncoming')) {
