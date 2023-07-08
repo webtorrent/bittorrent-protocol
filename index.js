@@ -982,8 +982,7 @@ class Wire extends Duplex {
     }
     // now this._buffer is an array containing a single Buffer
     if (this._cryptoSyncPattern) {
-      // convert to Buffer for finding arrays of bytes with indexOf
-      const index = Buffer.from(this._buffer[0]).indexOf(this._cryptoSyncPattern)
+      const index = this._indexOfMulti(this._buffer[0], this._cryptoSyncPattern)
       if (index !== -1) {
         this._buffer[0] = this._buffer[0].slice(index + this._cryptoSyncPattern.length)
         this._bufferSize -= (index + this._cryptoSyncPattern.length)
@@ -1381,6 +1380,33 @@ class Wire extends Duplex {
 
   _utfToHex (str) {
     return arr2hex(text2arr(str))
+  }
+
+  /*
+  * This _indexOfMulti function is based on the code from the "wa-tunnel" repository
+  * by Aleix Mac (https://github.com/aleixrodriala), which is licensed under the MIT
+  * license. Modifications were made to the original code.
+  */
+  _indexOfMulti (buffer, searchElements, fromIndex) {
+    fromIndex = fromIndex || 0
+
+    const firstElement = searchElements[0]
+    const searchLength = searchElements.length
+    const bufferLength = buffer.length
+
+    const index = buffer.indexOf(firstElement, fromIndex)
+    if (index === -1 || searchLength === 1) {
+      return index
+    }
+
+    let i, j
+    for (i = index, j = 0; j < searchLength && i < bufferLength; i++, j++) {
+      if (buffer[i] !== searchElements[j]) {
+        return this._indexOfMulti(buffer, searchElements, index + 1)
+      }
+    }
+
+    return i === index + searchLength ? index : -1
   }
 }
 
