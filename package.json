@@ -12,7 +12,7 @@
     "url": "https://github.com/webtorrent/bittorrent-protocol/issues"
   },
   "dependencies": {
-    "bencode": "^3.1.1",
+    "bencode": "^4.0.0",
     "bitfield": "^4.1.0",
     "debug": "^4.3.4",
     "rc4": "^0.1.5",
