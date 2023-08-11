@@ -1,3 +1,11 @@
+## [4.1.11](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.10...v4.1.11) (2023-08-11)
+
+
+### Bug Fixes
+
+* **deps:** update dependency streamx to ^2.15.1 ([#126](https://github.com/webtorrent/bittorrent-protocol/issues/126)) ([b138d12](https://github.com/webtorrent/bittorrent-protocol/commit/b138d1248f861ca88e812201e261a2ba744f98af))
+* **deps:** update dependency uint8-util to ^2.2.2 ([#124](https://github.com/webtorrent/bittorrent-protocol/issues/124)) ([3ff2481](https://github.com/webtorrent/bittorrent-protocol/commit/3ff24811f9063da9a47cccbd06c3e013804025a9))
+
 ## [4.1.10](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.9...v4.1.10) (2023-08-10)
 
 
