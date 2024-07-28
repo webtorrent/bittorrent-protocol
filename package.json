@@ -14,7 +14,7 @@
   "dependencies": {
     "bencode": "^4.0.0",
     "bitfield": "^4.1.0",
-    "debug": "^4.3.5",
+    "debug": "^4.3.6",
     "rc4": "^0.1.5",
     "streamx": "^2.15.1",
     "throughput": "^1.0.1",
