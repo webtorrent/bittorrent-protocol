@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "bencode": "^4.0.0",
-    "bitfield": "^4.1.0",
+    "bitfield": "^4.2.0",
     "debug": "^4.4.0",
     "rc4": "^0.1.5",
     "streamx": "^2.15.1",
