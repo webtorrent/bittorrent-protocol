@@ -1,3 +1,12 @@
+## [4.1.17](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.16...v4.1.17) (2025-06-28)
+
+
+### Bug Fixes
+
+* **deps:** update dependency bitfield to ^4.2.0 ([#141](https://github.com/webtorrent/bittorrent-protocol/issues/141)) ([e0c4051](https://github.com/webtorrent/bittorrent-protocol/commit/e0c4051d4eca7b606d136d9ed1a177e04f3dd428))
+* **deps:** update dependency debug to ^4.4.1 ([#154](https://github.com/webtorrent/bittorrent-protocol/issues/154)) ([230c240](https://github.com/webtorrent/bittorrent-protocol/commit/230c2401823847fca26d89fe2394039d552a2c8b))
+* PE/MSE encryption ([#155](https://github.com/webtorrent/bittorrent-protocol/issues/155)) ([4c252dc](https://github.com/webtorrent/bittorrent-protocol/commit/4c252dc39ef8355e478f32b59b51d999cfb1e2b9))
+
 ## [4.1.16](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.15...v4.1.16) (2024-12-07)
 
 
