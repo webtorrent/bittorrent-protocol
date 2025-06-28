@@ -699,7 +699,7 @@ class Wire extends Duplex {
   }
 
   async _onPe3 (hashesXorBuffer) {
-    const hash3 = await (arr2hex(this._utfToHex('req3') + this._sharedSecret))
+    const hash3 = await hash(hex2arr(this._utfToHex('req3') + this._sharedSecret))
     const sKeyHash = arr2hex(xor(hash3, hashesXorBuffer))
     this.emit('pe3', sKeyHash)
   }
