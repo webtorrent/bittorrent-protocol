@@ -648,6 +648,7 @@ class Wire extends Duplex {
     }
 
     this._setGenerators = true
+    this.emit('_generators')
     return true
   }
 
@@ -1151,10 +1152,11 @@ class Wire extends Duplex {
   }
 
   _parsePe2 () {
-    this._parse(96, pubKey => {
+    this._parse(96, async pubKey => {
       this._onPe2(pubKey)
-      while (!this._setGenerators) {
+      if (!this._setGenerators) {
         // Wait until generators have been set
+        await new Promise(resolve => this.once('_generators', resolve))
       }
       this._parsePe4()
     })
@@ -1165,10 +1167,11 @@ class Wire extends Duplex {
     const hash1Buffer = await hash(hex2arr(this._utfToHex('req1') + this._sharedSecret))
     // synchronize on HASH('req1', S)
     this._parseUntil(hash1Buffer, 512)
-    this._parse(20, buffer => {
+    this._parse(20, async buffer => {
       this._onPe3(buffer)
-      while (!this._setGenerators) {
+      if (!this._setGenerators) {
         // Wait until generators have been set
+        await new Promise(resolve => this.once('_generators', resolve))
       }
       this._parsePe3Encrypted()
     })
