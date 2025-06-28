@@ -54,12 +54,6 @@ test('Asynchronous handshake + extended handshake', t => {
     if (ext === 'handshake') {
       eventLog.push('w1 ex')
       t.ok(obj)
-
-      queueMicrotask(() => {
-        // Last step: ensure handshakes came before extension protocol
-        t.deepEqual(eventLog, ['w2 hs', 'w1 hs', 'w1 ex', 'w2 ex'])
-        t.end()
-      })
     }
   })
 
@@ -78,6 +72,12 @@ test('Asynchronous handshake + extended handshake', t => {
     if (ext === 'handshake') {
       eventLog.push('w2 ex')
       t.ok(obj)
+
+      queueMicrotask(() => {
+        // Last step: ensure handshakes came before extension protocol
+        t.deepEqual(eventLog, ['w2 hs', 'w1 hs', 'w1 ex', 'w2 ex'])
+        t.end()
+      })
     }
   })
 
