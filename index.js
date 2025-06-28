@@ -604,42 +604,15 @@ class Wire extends Duplex {
    * @returns boolean, true if encryption setting succeeds, false if it fails.
    */
   async setEncrypt (sharedSecret, infoHash) {
-    let encryptKeyBuf
-    let encryptKeyIntArray
-    let decryptKeyBuf
-    let decryptKeyIntArray
-    switch (this.type) {
-      case 'tcpIncoming':
-        encryptKeyBuf = await hash(hex2arr(this._utfToHex('keyB') + sharedSecret + infoHash))
-        decryptKeyBuf = await hash(hex2arr(this._utfToHex('keyA') + sharedSecret + infoHash))
-        encryptKeyIntArray = []
-        for (const value of encryptKeyBuf.values()) {
-          encryptKeyIntArray.push(value)
-        }
-        decryptKeyIntArray = []
-        for (const value of decryptKeyBuf.values()) {
-          decryptKeyIntArray.push(value)
-        }
-        this._encryptGenerator = new RC4(encryptKeyIntArray)
-        this._decryptGenerator = new RC4(decryptKeyIntArray)
-        break
-      case 'tcpOutgoing':
-        encryptKeyBuf = await hash(hex2arr(this._utfToHex('keyA') + sharedSecret + infoHash))
-        decryptKeyBuf = await hash(hex2arr(this._utfToHex('keyB') + sharedSecret + infoHash))
-        encryptKeyIntArray = []
-        for (const value of encryptKeyBuf.values()) {
-          encryptKeyIntArray.push(value)
-        }
-        decryptKeyIntArray = []
-        for (const value of decryptKeyBuf.values()) {
-          decryptKeyIntArray.push(value)
-        }
-        this._encryptGenerator = new RC4(encryptKeyIntArray)
-        this._decryptGenerator = new RC4(decryptKeyIntArray)
-        break
-      default:
-        return false
-    }
+    if (!this.type.startsWith('tcp')) return false
+
+    const outgoing = this.type === 'tcpOutgoing'
+
+    const keyAGenerator = new RC4([...await hash(hex2arr(this._utfToHex('keyA') + sharedSecret + infoHash))])
+    const keyBGenerator = new RC4([...await hash(hex2arr(this._utfToHex('keyB') + sharedSecret + infoHash))])
+
+    this._encryptGenerator = outgoing ? keyAGenerator : keyBGenerator
+    this._decryptGenerator = outgoing ? keyBGenerator : keyAGenerator
 
     // Discard the first 1024 bytes, as per MSE/PE implementation
     for (let i = 0; i < 1024; i++) {
