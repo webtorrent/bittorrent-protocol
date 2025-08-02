@@ -39,6 +39,26 @@ function xor (a, b) {
   for (let len = a.length; len--;) a[len] ^= b[len]
   return a
 }
+/**
+ * @param {Uint8Array} buffer
+ * @param {number} at
+ * @returns number
+ */
+function getUint32 (buffer, at = 0) {
+  return (buffer[at] << 24) | (buffer[at + 1] << 16) | (buffer[at + 2] << 8) | buffer[at + 3]
+}
+
+/**
+ * @param {Uint8Array} buffer
+ * @param {number} at
+ * @param {number} value
+ */
+function setUint32 (buffer, at, value) {
+  buffer[at] = (value >>> 24) & 0xFF
+  buffer[at + 1] = (value >>> 16) & 0xFF
+  buffer[at + 2] = (value >>> 8) & 0xFF
+  buffer[at + 3] = value & 0xFF
+}
 
 class Request {
   constructor (piece, offset, length, callback) {
@@ -631,12 +651,11 @@ class Wire extends Duplex {
   _message (id, numbers, data) {
     const dataLength = data ? data.length : 0
     const buffer = new Uint8Array(5 + (4 * numbers.length))
-    const view = new DataView(buffer.buffer)
 
-    view.setUint32(0, buffer.length + dataLength - 4)
+    setUint32(buffer, 0, buffer.length + dataLength - 4)
     buffer[4] = id
     for (let i = 0; i < numbers.length; i++) {
-      view.setUint32(5 + (4 * i), numbers[i])
+      setUint32(buffer, 5 + (4 * i), numbers[i])
     }
 
     this._push(buffer)
@@ -969,12 +988,12 @@ class Wire extends Duplex {
         this._parser(new Uint8Array())
       } else {
         const buffer = this._buffer[0]
-        // console.log('buffer:', this._buffer)
+
         this._bufferSize -= this._parserSize
         this._buffer = this._bufferSize
-          ? [buffer.slice(this._parserSize)]
+          ? [buffer.subarray(this._parserSize)]
           : []
-        this._parser(buffer.slice(0, this._parserSize))
+        this._parser(buffer.subarray(0, this._parserSize))
       }
     }
 
@@ -1035,7 +1054,7 @@ class Wire extends Duplex {
    * @param  {Uint8Array} buffer
    */
   _onMessageLength (buffer) {
-    const length = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength).getUint32(0)
+    const length = getUint32(buffer)
     if (length > 0) {
       this._parse(length, this._onMessage)
     } else {
@@ -1050,7 +1069,6 @@ class Wire extends Duplex {
    */
   _onMessage (buffer) {
     this._parse(4, this._onMessageLength)
-    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength)
     switch (buffer[0]) {
       case 0:
         return this._onChoke()
@@ -1061,45 +1079,45 @@ class Wire extends Duplex {
       case 3:
         return this._onUninterested()
       case 4:
-        return this._onHave(view.getUint32(1))
+        return this._onHave(getUint32(buffer, 1))
       case 5:
-        return this._onBitField(buffer.slice(1))
+        return this._onBitField(buffer.subarray(1))
       case 6:
         return this._onRequest(
-          view.getUint32(1),
-          view.getUint32(5),
-          view.getUint32(9)
+          getUint32(buffer, 1),
+          getUint32(buffer, 5),
+          getUint32(buffer, 9)
         )
       case 7:
         return this._onPiece(
-          view.getUint32(1),
-          view.getUint32(5),
-          buffer.slice(9)
+          getUint32(buffer, 1),
+          getUint32(buffer, 5),
+          buffer.subarray(9)
         )
       case 8:
         return this._onCancel(
-          view.getUint32(1),
-          view.getUint32(5),
-          view.getUint32(9)
+          getUint32(buffer, 1),
+          getUint32(buffer, 5),
+          getUint32(buffer, 9)
         )
       case 9:
-        return this._onPort(view.getUint16(1))
+        return this._onPort((buffer[1] << 8) | buffer[2])
       case 0x0D:
-        return this._onSuggest(view.getUint32(1))
+        return this._onSuggest(getUint32(buffer, 1))
       case 0x0E:
         return this._onHaveAll()
       case 0x0F:
         return this._onHaveNone()
       case 0x10:
         return this._onReject(
-          view.getUint32(1),
-          view.getUint32(5),
-          view.getUint32(9)
+          getUint32(buffer, 1),
+          getUint32(buffer, 5),
+          getUint32(buffer, 9)
         )
       case 0x11:
-        return this._onAllowedFast(view.getUint32(1))
+        return this._onAllowedFast(getUint32(buffer, 1))
       case 20:
-        return this._onExtended(buffer[1], buffer.slice(2))
+        return this._onExtended(buffer[1], buffer.subarray(2))
       default:
         this._debug('got unknown message')
         return this.emit('unknownmessage', buffer)
