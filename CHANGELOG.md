@@ -1,3 +1,10 @@
+## [4.1.19](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.18...v4.1.19) (2025-08-03)
+
+
+### Bug Fixes
+
+* **perf:** dont use dataview, dont use slice ([#156](https://github.com/webtorrent/bittorrent-protocol/issues/156)) ([caa19f2](https://github.com/webtorrent/bittorrent-protocol/commit/caa19f20a3de3f7e72641fba40c6e660afc2eedc))
+
 ## [4.1.18](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.17...v4.1.18) (2025-06-28)
 
 
