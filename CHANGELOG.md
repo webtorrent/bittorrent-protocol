@@ -1,3 +1,10 @@
+## [4.1.21](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.20...v4.1.21) (2025-09-14)
+
+
+### Bug Fixes
+
+* **deps:** update dependency debug to ^4.4.3 ([#163](https://github.com/webtorrent/bittorrent-protocol/issues/163)) ([be2f398](https://github.com/webtorrent/bittorrent-protocol/commit/be2f39875d43bd39476ca69834c8f49e9b749cb1))
+
 ## [4.1.20](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.19...v4.1.20) (2025-08-05)
 
 
