@@ -658,8 +658,7 @@ class Wire extends Duplex {
       setUint32(buffer, 5 + (4 * i), numbers[i])
     }
 
-    this._push(buffer)
-    if (data) this._push(data)
+    this._push(concat([buffer,data ?? []]))
   }
 
   _push (data) {
