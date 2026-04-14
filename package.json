@@ -22,7 +22,7 @@
     "unordered-array-remove": "^1.0.2"
   },
   "devDependencies": {
-    "@webtorrent/semantic-release-config": "1.0.10",
+    "@webtorrent/semantic-release-config": "1.0.11",
     "semantic-release": "25.0.3",
     "standard": "*",
     "tap-spec": "^5.0.0",
