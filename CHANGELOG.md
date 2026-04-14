@@ -1,3 +1,37 @@
+# [5.0.0](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.21...v5.0.0) (2026-04-14)
+
+
+### Bug Fixes
+
+* **deps:** update dependency streamx to ^2.25.0 ([#164](https://github.com/webtorrent/bittorrent-protocol/issues/164)) ([217270f](https://github.com/webtorrent/bittorrent-protocol/commit/217270ff874a199fdf6e2baf7895ba7b7b55e4dc))
+* **deps:** update dependency uint8-util to ^2.2.6 ([#172](https://github.com/webtorrent/bittorrent-protocol/issues/172)) ([d973687](https://github.com/webtorrent/bittorrent-protocol/commit/d973687f4e38ab02dbb2c198c6bd58b024703800))
+
+
+### chore
+
+* upgrade minimum node version to 20 ([#180](https://github.com/webtorrent/bittorrent-protocol/issues/180)) ([73920fd](https://github.com/webtorrent/bittorrent-protocol/commit/73920fdc033b308211fff22e9568a2a04005aa2e))
+
+
+### Features
+
+* Update Node.js engine version requirement ([#182](https://github.com/webtorrent/bittorrent-protocol/issues/182)) ([0f1a23f](https://github.com/webtorrent/bittorrent-protocol/commit/0f1a23fae147236074f5700e8b4ce006fd18b503))
+
+
+### BREAKING CHANGES
+
+* requires node 22
+
+* Update ci.yml
+
+* Update Node.js version from 20 to 22
+* requires node 22
+* requires node 20
+
+* chore: OIDC changes
+
+Add permissions for GitHub release job and update environment variables.
+* requires node 20
+
 ## [4.1.21](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.20...v4.1.21) (2025-09-14)
 
 
