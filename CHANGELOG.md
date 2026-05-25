@@ -1,3 +1,10 @@
+## [5.0.1](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.0...v5.0.1) (2026-05-25)
+
+
+### Bug Fixes
+
+* **deps:** update dependency bitfield to v5 ([#175](https://github.com/webtorrent/bittorrent-protocol/issues/175)) ([152719e](https://github.com/webtorrent/bittorrent-protocol/commit/152719e06b5fb01e5c7ef0e7747cb9eace5c756f))
+
 # [5.0.0](https://github.com/webtorrent/bittorrent-protocol/compare/v4.1.21...v5.0.0) (2026-04-14)
 
 
