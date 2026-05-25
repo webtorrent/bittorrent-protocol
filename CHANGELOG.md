@@ -1,3 +1,10 @@
+## [5.0.2](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.1...v5.0.2) (2026-05-25)
+
+
+### Bug Fixes
+
+* Update Node.js engine version requirement to >=18 ([899a574](https://github.com/webtorrent/bittorrent-protocol/commit/899a5748978dc4cee1875305de1a8813630a2fa7))
+
 ## [5.0.1](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.0...v5.0.1) (2026-05-25)
 
 
