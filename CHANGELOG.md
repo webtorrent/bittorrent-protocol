@@ -1,3 +1,10 @@
+## [5.0.3](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.2...v5.0.3) (2026-05-25)
+
+
+### Bug Fixes
+
+* **deps:** update dependency bencode to ^4.0.1 ([#188](https://github.com/webtorrent/bittorrent-protocol/issues/188)) ([328e96d](https://github.com/webtorrent/bittorrent-protocol/commit/328e96df51aa48e83f579d9a7b2bbdb932e3f08e))
+
 ## [5.0.2](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.1...v5.0.2) (2026-05-25)
 
 

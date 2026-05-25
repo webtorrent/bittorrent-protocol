@@ -2,7 +2,7 @@
   "name": "bittorrent-protocol",
   "type": "module",
   "description": "Simple, robust, BitTorrent peer wire protocol implementation",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "author": {
     "name": "WebTorrent LLC",
     "email": "feross@webtorrent.io",
