@@ -1,3 +1,10 @@
+## [5.0.4](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.3...v5.0.4) (2026-05-26)
+
+
+### Bug Fixes
+
+* pe-mse ([#186](https://github.com/webtorrent/bittorrent-protocol/issues/186)) ([08e0db6](https://github.com/webtorrent/bittorrent-protocol/commit/08e0db6a57d1547406dd03134307d2a7824c5a7d))
+
 ## [5.0.3](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.2...v5.0.3) (2026-05-25)
 
 
