@@ -200,6 +200,22 @@ wire.on('keep-alive', () => {
 	// peer sent a keep alive - just ignore it
 })
 ```
+
+### protocol encryption (RC4)
+
+Message stream encryption (RC4) is used automatically when both peers support it. The
+cipher can use Node's built-in `crypto.createCipheriv('rc4')` when available (~2-3x faster),
+or falls back to an inline JavaScript implementation.
+
+Check at runtime which path is in use:
+
+```js
+Wire.nativeRC4 // true if native RC4 is available, false if using JS fallback
+```
+
+This is useful for downstream consumers that want to decide whether to enable encryption
+based on performance characteristics. For example, `nativeRC4` is `false` by default on
+Node 17+ (requires `--openssl-legacy-provider`).
 ### fast extension (BEP 6)
 
 This module has built-in support for the
