@@ -148,14 +148,16 @@ export class MessageStreamEncryptor {
   }
 
   generateStepA1 () {
-    const ya = hex2arr(this.dh.generateKeys('hex'))
+    const raw = this.dh.generateKeys()
+    const ya = new Uint8Array(96)
+    ya.set(raw, 96 - raw.length)
     const padA = randomBytes(Math.floor(Math.random() * 513))
     return concat([ya, padA])
   }
 
   handleStepA2 (step2Data) {
     const yb = step2Data.slice(0, 96)
-    this.S = hex2arr(this.dh.computeSecret(yb, null, 'hex'))
+    this.S = this.dh.computeSecret(yb)
     if (this.skeyHex) this._initializeCiphers('A')
   }
 
@@ -189,8 +191,10 @@ export class MessageStreamEncryptor {
   }
 
   generateStepB2 () {
-    const yb = hex2arr(this.dh.generateKeys('hex'))
-    this.S = hex2arr(this.dh.computeSecret(this.ya, null, 'hex'))
+    const raw = this.dh.generateKeys()
+    const yb = new Uint8Array(96)
+    yb.set(raw, 96 - raw.length)
+    this.S = this.dh.computeSecret(this.ya)
     const padB = randomBytes(Math.floor(Math.random() * 513))
     return concat([yb, padB])
   }
