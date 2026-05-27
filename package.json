@@ -18,7 +18,7 @@
     "bencode": "^4.0.1",
     "bitfield": "^5.0.1",
     "debug": "^4.4.3",
-    "streamx": "^2.25.0",
+    "streamx": "^2.26.0",
     "throughput": "^1.0.2",
     "uint8-util": "^2.2.6",
     "unordered-array-remove": "^1.0.2"
