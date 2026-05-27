@@ -139,20 +139,26 @@ export class MessageStreamEncryptor {
     this.skeyHex = infoHash
     const step1 = this.generateStepA1()
     this.wire._push(step1)
-    this.state = 'sentPe1'
-    this.wire._debug('PE: sent step 1 (initiator)')
+    if (this.state === 'gotPe2') {
+      this._advanceEncryption()
+    } else {
+      this.state = 'sentPe1'
+    }
+    this.wire._debug('PE: sent step 1 (initiator, gotPe2Already=%s)', this.state === 'gotPe2')
   }
 
   generateStepA1 () {
-    const ya = hex2arr(this.dh.generateKeys('hex'))
+    const raw = this.dh.generateKeys()
+    const ya = new Uint8Array(96)
+    ya.set(raw, 96 - raw.length)
     const padA = randomBytes(Math.floor(Math.random() * 513))
     return concat([ya, padA])
   }
 
   handleStepA2 (step2Data) {
     const yb = step2Data.slice(0, 96)
-    this.S = hex2arr(this.dh.computeSecret(yb, null, 'hex'))
-    this._initializeCiphers('A')
+    this.S = this.dh.computeSecret(yb)
+    if (this.skeyHex) this._initializeCiphers('A')
   }
 
   generateStepA3 (cryptoProvide = 0x01 | 0x02) {
@@ -185,8 +191,10 @@ export class MessageStreamEncryptor {
   }
 
   generateStepB2 () {
-    const yb = hex2arr(this.dh.generateKeys('hex'))
-    this.S = hex2arr(this.dh.computeSecret(this.ya, null, 'hex'))
+    const raw = this.dh.generateKeys()
+    const yb = new Uint8Array(96)
+    yb.set(raw, 96 - raw.length)
+    this.S = this.dh.computeSecret(this.ya)
     const padB = randomBytes(Math.floor(Math.random() * 513))
     return concat([yb, padB])
   }
@@ -257,7 +265,8 @@ export class MessageStreamEncryptor {
 
   _advanceEncryption () {
     if (this.state === 'gotPe2' && this.skeyHex) {
-      const provide = this.wire._peEnabled === 2 ? 0x01 | 0x02 : 0x01
+      if (!this.encryptCipher) this._initializeCiphers('A')
+      const provide = this.wire._peEnabled === 2 ? 0x02 : 0x01 | 0x02
       const step3 = this.generateStepA3(provide)
       this.state = 'sentPe3'
       this.wire._debug('PE: sent step 3 (initiator)')
@@ -265,15 +274,12 @@ export class MessageStreamEncryptor {
       this.wire._push(step3)
     }
     if (this.state === 'gotPe3' && this.skeyHex) {
-      const prefer = this.wire._peEnabled === 1 ? 0x01 : 0x02
-      const fallback = this.wire._peEnabled === 1 ? 0x02 : 0x01
-      const cryptoSelect = this._peerCryptoProvide & prefer
-        ? prefer
-        : this._peerCryptoProvide & fallback
-          ? fallback
-          : 0
+      const wantPlaintext = this.wire._peEnabled === 1
+      const prefer = wantPlaintext ? 0x01 : 0x02
+      const accept = wantPlaintext ? (0x01 | 0x02) : 0x02
+      const cryptoSelect = (this._peerCryptoProvide & prefer) || (this._peerCryptoProvide & accept) || 0
       if (!cryptoSelect) {
-        this.wire._debug('Error: no supported crypto method to select')
+        this.wire._debug('Error: no supported crypto method to select (peerProvide=0x%s)', this._peerCryptoProvide.toString(16))
         this.wire.destroy()
         return
       }
@@ -282,6 +288,7 @@ export class MessageStreamEncryptor {
       this._finalizeCryptoHandshake(cryptoSelect)
       this.wire._debug('PE: sent step 4 (responder), crypto handshake done (method %s)', cryptoSelect)
       if (!this.wire.peerId) this.wire._parseHandshake(null)
+      this.wire.emit('crypto-handshake')
     }
   }
 
@@ -294,7 +301,6 @@ export class MessageStreamEncryptor {
       const buf = concat(this.wire._buffer, this.wire._bufferSize)
       this.wire._buffer = [this.decrypt(buf)]
     }
-    this.wire.emit('crypto-handshake')
   }
 
   setInfoHash (infoHash) {
@@ -338,7 +344,7 @@ export class MessageStreamEncryptor {
   _onPe3Header (buffer) {
     const decHeader = this.decryptCipher(buffer)
     if (!equal(decHeader.subarray(0, 8), VC)) {
-      this.wire._debug('Error: VC verification failed in pe3')
+      this.wire._debug('Error: VC verification failed in pe3 (got %d bytes)', decHeader.length)
       this.wire.destroy()
       return
     }
@@ -369,10 +375,10 @@ export class MessageStreamEncryptor {
 
   _onPe3Ia (iaBuffer) {
     const ia = this.decryptCipher(iaBuffer)
+    this._advanceEncryption()
     if (ia.length > 0 && ia[0] === 19 && arr2text(ia.slice(1, 20)) === 'BitTorrent protocol') {
       this.wire._onHandshakeBuffer(ia.slice(1))
     }
-    this._advanceEncryption()
   }
 
   _handlePe4 () {
@@ -398,6 +404,7 @@ export class MessageStreamEncryptor {
     this._finalizeCryptoHandshake(selectedMethod)
     this.wire._debug('PE: handled step 4, crypto handshake done (method %s)', selectedMethod)
     this.wire._parseHandshake(null)
+    this.wire.emit('crypto-handshake')
   }
 
   //

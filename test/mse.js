@@ -49,10 +49,10 @@ test('PE: wire-to-wire full handshake', t => {
   const infoHash = hex()
   const { wireA, wireB } = piped(2)
 
-  startCrypto(wireA, wireB, infoHash)
-
   wireA.once('crypto-handshake', () => t.pass('initiator crypto handshake done'))
   wireB.once('crypto-handshake', () => t.pass('responder crypto handshake done'))
+
+  startCrypto(wireA, wireB, infoHash)
 })
 
 test('PE: handshake state transitions', t => {
@@ -63,8 +63,6 @@ test('PE: handshake state transitions', t => {
 
   t.equal(wireA._peState, 'idle', 'initiator starts idle')
   t.equal(wireB._peState, 'idle', 'responder starts idle')
-
-  startCrypto(wireA, wireB, infoHash)
 
   wireA.once('crypto-handshake', () => {
     t.equal(wireA._peState, 'done', 'initiator peState done')
@@ -77,6 +75,8 @@ test('PE: handshake state transitions', t => {
     t.equal(wireB._encryptionMethod, 2, 'responder using RC4')
     t.ok(wireB._cryptoHandshakeDone, 'responder crypto handshake flagged')
   })
+
+  startCrypto(wireA, wireB, infoHash)
 })
 
 test('PE: wire-to-wire with BT handshake exchange', t => {
@@ -87,8 +87,6 @@ test('PE: wire-to-wire with BT handshake exchange', t => {
   const peerIdB = hex()
 
   const { wireA, wireB } = piped(2)
-
-  startCrypto(wireA, wireB, infoHash)
 
   onBoth(wireA, wireB, 'crypto-handshake', () => {
     wireA.handshake(infoHash, peerIdA, { dht: false, fast: true })
@@ -104,6 +102,8 @@ test('PE: wire-to-wire with BT handshake exchange', t => {
     t.equal(gotIH, infoHash, 'responder received correct infoHash')
     t.equal(gotPI, peerIdA, 'responder received correct peerId')
   })
+
+  startCrypto(wireA, wireB, infoHash)
 })
 
 test('PE: encrypted message exchange', t => {
@@ -334,8 +334,6 @@ test('PE: method 1 plaintext (peEnabled=1) handshake and message exchange', t =>
 
   const { wireA, wireB } = piped(1)
 
-  startCrypto(wireA, wireB, infoHash)
-
   onBoth(wireA, wireB, 'crypto-handshake', () => {
     t.equal(wireA._encryptionMethod, 1, 'initiator encryption method 1')
     t.equal(wireB._encryptionMethod, 1, 'responder encryption method 1')
@@ -360,6 +358,8 @@ test('PE: method 1 plaintext (peEnabled=1) handshake and message exchange', t =>
     onHandshake()
   })
   wireB.once('handshake', onHandshake)
+
+  startCrypto(wireA, wireB, infoHash)
 })
 
 test('PE: _detectHandshakeOrPe: byte 0x13 + non-BT-protocol goes to PE path (responder)', t => {
@@ -420,7 +420,7 @@ test('PE: outgoing fallback to plaintext when peer sends handshake instead of pe
   })
 })
 
-test('PE: mixed levels 2->1 — init offers both, responder prefers plaintext -> method 1', t => {
+test('PE: mixed levels 2->1 — init offers RC4 only, responder prefers plaintext -> method 2', t => {
   t.plan(6)
 
   const infoHash = hex()
@@ -429,13 +429,11 @@ test('PE: mixed levels 2->1 — init offers both, responder prefers plaintext ->
 
   const { wireA, wireB } = piped(2, 1)
 
-  startCrypto(wireA, wireB, infoHash)
-
   onBoth(wireA, wireB, 'crypto-handshake', () => {
-    t.equal(wireA._encryptionMethod, 1, 'initiator method 1')
-    t.equal(wireB._encryptionMethod, 1, 'responder method 1')
-    t.notOk(wireA._encryptor._isEncrypted, 'initiator data not encrypted')
-    t.notOk(wireB._encryptor._isEncrypted, 'responder data not encrypted')
+    t.equal(wireA._encryptionMethod, 2, 'initiator method 2')
+    t.equal(wireB._encryptionMethod, 2, 'responder method 2')
+    t.ok(wireA._encryptor._isEncrypted, 'initiator data encrypted')
+    t.ok(wireB._encryptor._isEncrypted, 'responder data encrypted')
     wireA.handshake(infoHash, peerIdA, { dht: false })
     wireB.handshake(infoHash, peerIdB, { dht: false })
   })
@@ -444,9 +442,11 @@ test('PE: mixed levels 2->1 — init offers both, responder prefers plaintext ->
     t.equal(gotIH, infoHash, 'initiator correct infoHash')
     t.equal(gotPI, peerIdB, 'initiator correct peerId')
   })
+
+  startCrypto(wireA, wireB, infoHash)
 })
 
-test('PE: mixed levels 1->2 — init offers only plaintext, respondent prefers RC4 -> method 1 forced', t => {
+test('PE: mixed levels 1->2 — init offers both, respondent prefers RC4 -> method 2', t => {
   t.plan(6)
 
   const infoHash = hex()
@@ -455,13 +455,11 @@ test('PE: mixed levels 1->2 — init offers only plaintext, respondent prefers R
 
   const { wireA, wireB } = piped(1, 2)
 
-  startCrypto(wireA, wireB, infoHash)
-
   onBoth(wireA, wireB, 'crypto-handshake', () => {
-    t.equal(wireA._encryptionMethod, 1, 'initiator method 1')
-    t.equal(wireB._encryptionMethod, 1, 'responder method 1')
-    t.notOk(wireA._encryptor._isEncrypted, 'initiator data not encrypted')
-    t.notOk(wireB._encryptor._isEncrypted, 'responder data not encrypted')
+    t.equal(wireA._encryptionMethod, 2, 'initiator method 2')
+    t.equal(wireB._encryptionMethod, 2, 'responder method 2')
+    t.ok(wireA._encryptor._isEncrypted, 'initiator data encrypted')
+    t.ok(wireB._encryptor._isEncrypted, 'responder data encrypted')
     wireA.handshake(infoHash, peerIdA, { dht: false })
     wireB.handshake(infoHash, peerIdB, { dht: false })
   })
@@ -470,6 +468,8 @@ test('PE: mixed levels 1->2 — init offers only plaintext, respondent prefers R
     t.equal(gotIH, infoHash, 'initiator correct infoHash')
     t.equal(gotPI, peerIdB, 'initiator correct peerId')
   })
+
+  startCrypto(wireA, wireB, infoHash)
 })
 
 test('PE: mixed levels 2->0 — init tries PE, peer sends plaintext handshake -> fallback', t => {
