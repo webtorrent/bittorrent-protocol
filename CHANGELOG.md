@@ -1,3 +1,10 @@
+## [5.0.5](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.4...v5.0.5) (2026-05-27)
+
+
+### Bug Fixes
+
+* race conditions for libtorrent peers ([#189](https://github.com/webtorrent/bittorrent-protocol/issues/189)) ([6d83c6f](https://github.com/webtorrent/bittorrent-protocol/commit/6d83c6f40d24773c46d2ec5d8f7ed37ca12985ea))
+
 ## [5.0.4](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.3...v5.0.4) (2026-05-26)
 
 
