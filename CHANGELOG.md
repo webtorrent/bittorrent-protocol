@@ -1,3 +1,10 @@
+## [5.0.6](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.5...v5.0.6) (2026-05-27)
+
+
+### Bug Fixes
+
+* **deps:** update dependency streamx to ^2.26.0 ([#190](https://github.com/webtorrent/bittorrent-protocol/issues/190)) ([e4bfc06](https://github.com/webtorrent/bittorrent-protocol/commit/e4bfc0622090e369af097244c3e01a5e4d08d5db))
+
 ## [5.0.5](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.4...v5.0.5) (2026-05-27)
 
 
