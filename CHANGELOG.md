@@ -1,3 +1,10 @@
+## [5.0.7](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.6...v5.0.7) (2026-07-23)
+
+
+### Bug Fixes
+
+* **deps:** update dependency uint8-util to ^2.3.2 ([#204](https://github.com/webtorrent/bittorrent-protocol/issues/204)) ([d4e73c1](https://github.com/webtorrent/bittorrent-protocol/commit/d4e73c1d587b032769521f776ccd94fb2c96a48c))
+
 ## [5.0.6](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.5...v5.0.6) (2026-05-27)
 
 
