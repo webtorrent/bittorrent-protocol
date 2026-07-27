@@ -1,5 +1,6 @@
 import crypto from 'crypto'
 import test from 'tape'
+import BitField from 'bitfield'
 import Wire from '../index.js'
 import { concat, arr2hex, arr2text, hex2arr, randomBytes, equal, text2arr } from 'uint8-util'
 import { MessageStreamEncryptor } from '../mse.js'
@@ -14,6 +15,17 @@ function piped (levelA, levelB = levelA) {
   const wireA = new Wire('tcpOutgoing', levelA)
   const wireB = new Wire('tcpIncoming', levelB)
   wireA.pipe(wireB).pipe(wireA)
+  return { wireA, wireB }
+}
+
+// Like piped(), but copies every chunk in transit the way a real socket does.
+// A direct pipe hands the sender's own buffer to the receiver, whose decrypt
+// XORs any in-place encryption back out before a test can observe it.
+function socketPiped (levelA, levelB = levelA) {
+  const wireA = new Wire('tcpOutgoing', levelA)
+  const wireB = new Wire('tcpIncoming', levelB)
+  wireA.on('data', chunk => wireB.write(new Uint8Array(chunk)))
+  wireB.on('data', chunk => wireA.write(new Uint8Array(chunk)))
   return { wireA, wireB }
 }
 
@@ -252,7 +264,8 @@ test('PE: MessageStreamEncryptor key exchange and encrypt/decrypt', t => {
   initEnc._isEncrypted = true
 
   const plaintext = new Uint8Array([1, 2, 3, 4, 5])
-  const encrypted = respEnc.encrypt(new Uint8Array(plaintext))
+  const encrypted = respEnc.encrypt(plaintext)
+  t.ok(equal(plaintext, new Uint8Array([1, 2, 3, 4, 5])), 'encrypt leaves the caller\'s buffer alone')
   t.notOk(equal(encrypted, plaintext), 'encrypted data differs from plaintext')
   const decrypted2 = initEnc.decrypt(encrypted)
   t.ok(equal(decrypted2, plaintext), 'decrypted data matches original plaintext')
@@ -510,4 +523,88 @@ test('PE: mixed levels 0->1 — init sends BT handshake, responder detects plain
   const peerId = hex()
 
   fallbackTest(t, 'tcpIncoming', 1, infoHash, peerId)
+})
+
+test('PE: sending does not mutate the caller\'s message payloads', t => {
+  t.plan(6)
+
+  // webtorrent passes the torrent's live BitField and a block from the chunk store
+  const infoHash = hex()
+  const peerIdA = hex()
+  const peerIdB = hex()
+
+  const { wireA, wireB } = socketPiped(2)
+
+  const bitfield = new BitField(256)
+  for (const i of [0, 3, 7, 64, 255]) bitfield.set(i, true)
+  const bitfieldBefore = new Uint8Array(bitfield.buffer)
+
+  const block = randomBytes(64)
+  const blockBefore = new Uint8Array(block)
+
+  wireB.once('bitfield', peerPieces => {
+    t.ok(equal(bitfield.buffer, bitfieldBefore), 'sender\'s bitfield buffer is unchanged')
+    t.ok([0, 3, 7, 64, 255].every(i => peerPieces.get(i)), 'peer received the pieces we have')
+    t.notOk([1, 2, 4, 65, 254].some(i => peerPieces.get(i)), 'peer did not receive pieces we lack')
+  })
+
+  wireB.once('piece', (index, offset, buffer) => {
+    t.equal(index, 1, 'peer received correct piece index')
+    t.ok(equal(block, blockBefore), 'sender\'s block buffer is unchanged')
+    t.ok(equal(buffer, blockBefore), 'peer received the correct block')
+  })
+
+  onBoth(wireA, wireB, 'crypto-handshake', () => {
+    wireA.handshake(infoHash, peerIdA, { dht: false })
+    wireB.handshake(infoHash, peerIdB, { dht: false })
+  })
+
+  let gotHandshake = 0
+  function onHandshake () {
+    gotHandshake++
+    if (gotHandshake < 2) return
+    wireA.bitfield(bitfield)
+    wireA.piece(1, 0, block)
+  }
+  wireA.once('handshake', onHandshake)
+  wireB.once('handshake', onHandshake)
+
+  startCrypto(wireA, wireB, infoHash)
+})
+
+test('PE: repeated constant messages survive encryption', t => {
+  t.plan(2)
+
+  // MESSAGE_* are module-level singletons, so corrupting one breaks every wire
+  const infoHash = hex()
+  const peerIdA = hex()
+  const peerIdB = hex()
+
+  const { wireA, wireB } = socketPiped(2)
+
+  let keepAlives = 0
+  wireB.on('keep-alive', () => {
+    keepAlives++
+    if (keepAlives === 2) t.pass('peer received both keep-alives')
+  })
+  wireB.once('choke', () => t.pass('peer received choke sent after a keep-alive'))
+
+  onBoth(wireA, wireB, 'crypto-handshake', () => {
+    wireA.handshake(infoHash, peerIdA, { dht: false })
+    wireB.handshake(infoHash, peerIdB, { dht: false })
+  })
+
+  let gotHandshake = 0
+  function onHandshake () {
+    gotHandshake++
+    if (gotHandshake < 2) return
+    wireA.keepAlive()
+    wireA.keepAlive()
+    wireA.unchoke()
+    wireA.choke()
+  }
+  wireA.once('handshake', onHandshake)
+  wireB.once('handshake', onHandshake)
+
+  startCrypto(wireA, wireB, infoHash)
 })

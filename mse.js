@@ -35,16 +35,18 @@ function createRC4Cipher (key) {
     s[ii] = s[jj]
     s[jj] = tmp
   }
+  // `buf` belongs to the caller, so write to a new buffer like the native cipher does
   return buf => {
+    const out = new Uint8Array(buf.length)
     for (let i = 0; i < buf.length; i++) {
       ii = (ii + 1) & 0xff
       jj = (jj + s[ii]) & 0xff
       const tmp = s[ii]
       s[ii] = s[jj]
       s[jj] = tmp
-      buf[i] ^= s[(s[ii] + s[jj]) & 0xff]
+      out[i] = buf[i] ^ s[(s[ii] + s[jj]) & 0xff]
     }
-    return buf
+    return out
   }
 }
 
