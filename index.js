@@ -265,7 +265,7 @@ class Wire extends Duplex {
    */
   keepAlive () {
     this._debug('keep-alive')
-    this._pushCopy(MESSAGE_KEEP_ALIVE)
+    this._push(MESSAGE_KEEP_ALIVE)
   }
 
   /**
@@ -363,7 +363,7 @@ class Wire extends Duplex {
     if (this.amChoking) return
     this.amChoking = true
     this._debug('choke')
-    this._pushCopy(MESSAGE_CHOKE)
+    this._push(MESSAGE_CHOKE)
 
     if (this.hasFast) {
       // BEP6: If a peer sends a choke, it MUST reject all requests from the peer to whom the choke
@@ -391,7 +391,7 @@ class Wire extends Duplex {
     if (!this.amChoking) return
     this.amChoking = false
     this._debug('unchoke')
-    this._pushCopy(MESSAGE_UNCHOKE)
+    this._push(MESSAGE_UNCHOKE)
   }
 
   /**
@@ -401,7 +401,7 @@ class Wire extends Duplex {
     if (this.amInterested) return
     this.amInterested = true
     this._debug('interested')
-    this._pushCopy(MESSAGE_INTERESTED)
+    this._push(MESSAGE_INTERESTED)
   }
 
   /**
@@ -411,7 +411,7 @@ class Wire extends Duplex {
     if (!this.amInterested) return
     this.amInterested = false
     this._debug('uninterested')
-    this._pushCopy(MESSAGE_UNINTERESTED)
+    this._push(MESSAGE_UNINTERESTED)
   }
 
   /**
@@ -515,7 +515,7 @@ class Wire extends Duplex {
   haveAll () {
     if (!this.hasFast) throw Error('fast extension is disabled')
     this._debug('have-all')
-    this._pushCopy(MESSAGE_HAVE_ALL)
+    this._push(MESSAGE_HAVE_ALL)
   }
 
   /**
@@ -524,7 +524,7 @@ class Wire extends Duplex {
   haveNone () {
     if (!this.hasFast) throw Error('fast extension is disabled')
     this._debug('have-none')
-    this._pushCopy(MESSAGE_HAVE_NONE)
+    this._push(MESSAGE_HAVE_NONE)
   }
 
   /**
@@ -597,10 +597,6 @@ class Wire extends Duplex {
 
     this._push(buffer)
     if (data) this._push(data)
-  }
-
-  _pushCopy (data) {
-    return this._push(new Uint8Array(data))
   }
 
   _push (data) {
