@@ -1,3 +1,10 @@
+## [5.0.8](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.7...v5.0.8) (2026-07-27)
+
+
+### Bug Fixes
+
+* don't encrypt caller's buffer in place in the RC4 fallback ([#206](https://github.com/webtorrent/bittorrent-protocol/issues/206)) ([50bcfa4](https://github.com/webtorrent/bittorrent-protocol/commit/50bcfa494cdadf0bd0b8948936dffd743a6a4b4e))
+
 ## [5.0.7](https://github.com/webtorrent/bittorrent-protocol/compare/v5.0.6...v5.0.7) (2026-07-23)
 
 
